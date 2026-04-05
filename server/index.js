@@ -52,6 +52,17 @@ app.get("/api/health", (req, res) => {
   res.json({ ok: true });
 });
 
+app.use("/api/admin/analytics", requireAdminAuth);
+app.use("/api/admin/orders", requireAdminAuth);
+app.use("/api/admin/customers", (req, res, next) => {
+  if (req.method === "GET") {
+    return requireAdminAuth(req, res, next);
+  }
+  return next();
+});
+app.use("/api/admin/products/import", requireAdminAuth);
+app.use("/api/admin/settings/carousel", requireAdminAuth);
+
 app.get(["/admin.html", "/admin-product.html", "/orders.html"], requireAdminAuth, (req, res) => {
   res.sendFile(path.join(clientDir, req.path.slice(1)));
 });
@@ -63,7 +74,7 @@ app.get(["/admin.js", "/admin-product.js", "/orders.js"], requireAdminAuth, (req
 app.use(express.static(clientDir));
 
 app.use("/api/products", productRoutes);
-app.use("/api/admin", requireAdminAuth, adminRoutes);
+app.use("/api/admin", adminRoutes);
 
 app.get("*", (req, res) => {
   res.sendFile(path.join(clientDir, "index.html"));
