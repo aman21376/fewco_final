@@ -136,18 +136,27 @@ router.put("/settings/carousel", async (req, res) => {
 
 router.post("/track-visit", async (req, res) => {
   try {
-    const { visitorId, path = "/", userAgent = "" } = req.body;
+    const { visitorId, path = "/", userAgent = "", eventType = "initial" } = req.body;
     if (!visitorId) {
       return res.status(400).json({ message: "visitorId is required" });
     }
 
+    const now = new Date();
+    const isInitial = eventType === "initial";
+    const update = isInitial
+      ? {
+          $set: { lastSeenAt: now, path, userAgent },
+          $setOnInsert: { firstSeenAt: now },
+          $inc: { visitCount: 1 }
+        }
+      : {
+          $set: { lastSeenAt: now, path, userAgent },
+          $setOnInsert: { firstSeenAt: now, visitCount: 1 }
+        };
+
     await Visitor.findOneAndUpdate(
       { visitorId },
-      {
-        $set: { lastSeenAt: new Date(), path, userAgent },
-        $setOnInsert: { firstSeenAt: new Date() },
-        $inc: { visitCount: 1 }
-      },
+      update,
       { upsert: true, new: true }
     );
 

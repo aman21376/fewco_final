@@ -21,9 +21,11 @@ let heroIndex = 0;
 let heroTimer = null;
 let currentVisitorId = "";
 let hasTrackedPreorderClick = false;
+let visitHeartbeatTimer = null;
 const isProductPage = window.location.pathname.toLowerCase().endsWith("/product.html") || window.location.pathname.toLowerCase().endsWith("product.html");
 const instagramProfileUrl = "https://www.instagram.com/fewco.in?igsh=MWxnZ3F2d2trd28zNA%3D%3D&utm_source=qr";
 const productScrollKey = "fewco-product-scroll";
+const visitHeartbeatMs = 15000;
 let detailFormState = {
   name: "",
   phone: "",
@@ -185,8 +187,10 @@ function getFallbackProducts() {
 }
 
 async function bootstrap() {
-  await trackVisit();
-  await Promise.all([loadProducts(), loadSettings()]);
+  ensureVisitorId();
+  const visitPromise = trackVisit("initial");
+  await Promise.all([loadProducts(), loadSettings(), visitPromise]);
+  startVisitHeartbeat();
   renderAll();
   if (isProductPage && sessionStorage.getItem(productScrollKey) === "detail") {
     sessionStorage.removeItem(productScrollKey);
@@ -235,27 +239,60 @@ async function loadSettings() {
   }
 }
 
-async function trackVisit() {
+function ensureVisitorId() {
   const key = "fewco-visitor-id";
   currentVisitorId = localStorage.getItem(key);
   if (!currentVisitorId) {
     currentVisitorId = `visitor-${crypto.randomUUID ? crypto.randomUUID() : Date.now()}`;
     localStorage.setItem(key, currentVisitorId);
   }
+}
 
+function buildVisitPayload(eventType = "heartbeat") {
+  return JSON.stringify({
+    visitorId: currentVisitorId,
+    path: window.location.pathname,
+    userAgent: navigator.userAgent,
+    eventType
+  });
+}
+
+async function trackVisit(eventType = "heartbeat") {
+  ensureVisitorId();
   try {
     await fetch(`${ADMIN_API_URL}/track-visit`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        visitorId: currentVisitorId,
-        path: window.location.pathname,
-        userAgent: navigator.userAgent
-      })
+      keepalive: eventType !== "initial",
+      body: buildVisitPayload(eventType)
     });
   } catch (error) {
     // Non-blocking analytics call.
   }
+}
+
+function sendVisitBeacon(eventType = "hidden") {
+  ensureVisitorId();
+  if (!navigator.sendBeacon) {
+    trackVisit(eventType);
+    return;
+  }
+
+  const blob = new Blob([buildVisitPayload(eventType)], { type: "application/json" });
+  navigator.sendBeacon(`${ADMIN_API_URL}/track-visit`, blob);
+}
+
+function stopVisitHeartbeat() {
+  clearInterval(visitHeartbeatTimer);
+  visitHeartbeatTimer = null;
+}
+
+function startVisitHeartbeat() {
+  stopVisitHeartbeat();
+  if (document.visibilityState === "hidden") return;
+  visitHeartbeatTimer = window.setInterval(() => {
+    trackVisit("heartbeat");
+  }, visitHeartbeatMs);
 }
 
 async function trackPreorderClick() {
@@ -905,6 +942,21 @@ function bindEvents() {
 
   window.addEventListener("scroll", () => {
     document.getElementById("siteHeader")?.classList.toggle("scrolled", window.scrollY > 24);
+  });
+
+  document.addEventListener("visibilitychange", () => {
+    if (document.visibilityState === "hidden") {
+      stopVisitHeartbeat();
+      sendVisitBeacon("hidden");
+      return;
+    }
+    trackVisit("visible");
+    startVisitHeartbeat();
+  });
+
+  window.addEventListener("pagehide", () => {
+    stopVisitHeartbeat();
+    sendVisitBeacon("pagehide");
   });
 }
 
