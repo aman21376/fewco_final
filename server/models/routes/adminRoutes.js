@@ -10,6 +10,7 @@ import Visitor from "../Visitor.js";
 import Customer from "../Customer.js";
 import HeroReaction from "../HeroReaction.js";
 import ProductReaction from "../ProductReaction.js";
+import OrderAttempt from "../OrderAttempt.js";
 
 const router = express.Router();
 const SETTINGS_KEY = "global";
@@ -89,6 +90,14 @@ function normalizeImportProduct(row) {
     remainingStock: Number(row.remainingStock || row["remaining stock"] || 100),
     featured: normalizeBoolean(row.featured)
   };
+}
+
+async function safeLogOrderAttempt(payload) {
+  try {
+    await OrderAttempt.create(payload);
+  } catch (error) {
+    console.error("Failed to log order attempt", error);
+  }
 }
 
 router.get("/settings", async (req, res) => {
@@ -194,7 +203,7 @@ router.post("/preorder-click", async (req, res) => {
 
 router.get("/analytics", async (req, res) => {
   try {
-    const [visitorRows, uniqueVisitors, customerRows, customerCount, products, carouselLikes, enquiryVisitors, enquiryCount, preorderClickCount, repeatVisitors] = await Promise.all([
+    const [visitorRows, uniqueVisitors, customerRows, customerCount, products, carouselLikes, enquiryVisitors, enquiryCount, preorderClickCount, repeatVisitors, attemptedOrders, successfulOrders, failedOrders] = await Promise.all([
       Visitor.find().sort({ lastSeenAt: -1 }).limit(8),
       Visitor.countDocuments(),
       Customer.find().sort({ createdAt: -1 }).limit(20),
@@ -207,7 +216,10 @@ router.get("/analytics", async (req, res) => {
       Customer.distinct("visitorId", { source: "product-interest", visitorId: { $ne: "" } }),
       Customer.countDocuments({ source: "product-interest" }),
       Visitor.countDocuments({ preOrderClicked: true }),
-      Visitor.countDocuments({ visitCount: { $gt: 1 } })
+      Visitor.countDocuments({ visitCount: { $gt: 1 } }),
+      OrderAttempt.countDocuments(),
+      OrderAttempt.countDocuments({ success: true }),
+      OrderAttempt.countDocuments({ success: false })
     ]);
 
     const totalVisitors = visitorRows.reduce((sum, row) => sum + row.visitCount, 0);
@@ -272,7 +284,10 @@ router.get("/analytics", async (req, res) => {
         enquiryCount,
         customerCount,
         productCount: products,
-        preorderConversionRate
+        preorderConversionRate,
+        attemptedOrders,
+        successfulOrders,
+        failedOrders
       },
       recentVisitors,
       customers: customerRows,
@@ -357,7 +372,13 @@ router.get("/customers", async (req, res) => {
 
 router.get("/orders", async (req, res) => {
   try {
-    const orders = await Customer.find({ source: "product-interest" }).sort({ createdAt: -1 });
+    const [orders, orderAttempts, attemptedOrders, successfulOrders, failedOrders] = await Promise.all([
+      Customer.find({ source: "product-interest" }).sort({ createdAt: -1 }),
+      OrderAttempt.find({ source: "product-interest" }).sort({ createdAt: -1 }).limit(50),
+      OrderAttempt.countDocuments({ source: "product-interest" }),
+      OrderAttempt.countDocuments({ source: "product-interest", success: true }),
+      OrderAttempt.countDocuments({ source: "product-interest", success: false })
+    ]);
     const totalOrders = orders.length;
     const totalUnits = orders.reduce((sum, order) => sum + Math.max(1, Number(order.selectedQuantity || 1)), 0);
     const uniqueCustomers = new Set(orders.map(order => order.phone).filter(Boolean)).size;
@@ -375,9 +396,13 @@ router.get("/orders", async (req, res) => {
         totalUnits,
         uniqueCustomers,
         ordersToday,
-        lastUpdatedAt: new Date().toISOString()
+        lastUpdatedAt: new Date().toISOString(),
+        attemptedOrders,
+        successfulOrders,
+        failedOrders
       },
-      orders
+      orders,
+      attempts: orderAttempts
     });
   } catch (error) {
     res.status(500).json({ message: "Failed to load order details" });
@@ -386,7 +411,7 @@ router.get("/orders", async (req, res) => {
 
 router.get("/export-all", async (req, res) => {
   try {
-    const [products, visitors, customers, orders, heroLikes, productLikes, settings, visitorTotals] = await Promise.all([
+    const [products, visitors, customers, orders, heroLikes, productLikes, settings, visitorTotals, orderAttempts] = await Promise.all([
       Product.find().sort({ priority: -1, createdAt: -1, _id: -1 }).lean(),
       Visitor.find().sort({ lastSeenAt: -1 }).lean(),
       Customer.find().sort({ createdAt: -1 }).lean(),
@@ -420,7 +445,8 @@ router.get("/export-all", async (req, res) => {
             }
           }
         }
-      ])
+      ]),
+      OrderAttempt.find().sort({ createdAt: -1 }).lean()
     ]);
 
     const likeCountByProductId = productLikes.reduce((map, reaction) => {
@@ -440,6 +466,7 @@ router.get("/export-all", async (req, res) => {
       { metric: "Repeat Visitors", value: totals.repeatVisitors || 0 },
       { metric: "Customers / Enquiries", value: customers.length },
       { metric: "Product Interest Orders", value: orders.length },
+      { metric: "Order Attempts", value: orderAttempts.length },
       { metric: "Hero Likes", value: heroLikes.length },
       { metric: "Product Likes", value: productLikes.length },
       { metric: "Products", value: products.length }
@@ -514,6 +541,19 @@ router.get("/export-all", async (req, res) => {
       notes: order.notes || ""
     }));
 
+    const orderAttemptRows = orderAttempts.map(attempt => ({
+      createdAt: attempt.createdAt || "",
+      visitorId: attempt.visitorId || "",
+      productId: attempt.productId || "",
+      productName: attempt.productName || "",
+      name: attempt.name || "",
+      phone: attempt.phone || "",
+      selectedSize: attempt.selectedSize || "",
+      selectedQuantity: Number(attempt.selectedQuantity || 0),
+      success: attempt.success ? "Yes" : "No",
+      failureReason: attempt.failureReason || "-"
+    }));
+
     const heroLikeRows = heroLikes.map(reaction => ({
       id: String(reaction._id),
       visitorId: reaction.visitorId || "",
@@ -546,6 +586,7 @@ router.get("/export-all", async (req, res) => {
       ["Visitors", visitorRows],
       ["Enquiries", customerRows],
       ["Orders", orderRows],
+      ["OrderAttempts", orderAttemptRows],
       ["HeroLikes", heroLikeRows],
       ["ProductLikes", productLikeRows],
       ["Settings", settingsRows]
@@ -568,11 +609,31 @@ router.get("/export-all", async (req, res) => {
 router.post("/customers", async (req, res) => {
   try {
     const { name, phone, email } = req.body;
+    const source = req.body.source || "waitlist";
+    const isProductInterest = source === "product-interest";
+    const attemptBase = isProductInterest ? {
+      visitorId: req.body.visitorId || "",
+      productId: req.body.productId || "",
+      productName: req.body.productName || "",
+      productImage: req.body.productImage || "",
+      productPrice: Number(req.body.productPrice || 0),
+      name: req.body.name || "",
+      phone: req.body.phone || "",
+      selectedSize: req.body.selectedSize || "",
+      selectedQuantity: Math.max(1, Number(req.body.selectedQuantity || 1)),
+      source
+    } : null;
+
     if (!name || (!phone && !email)) {
+      if (attemptBase) {
+        await safeLogOrderAttempt({
+          ...attemptBase,
+          success: false,
+          failureReason: "Missing required fields"
+        });
+      }
       return res.status(400).json({ message: "Name and phone or email are required" });
     }
-
-    const source = req.body.source || "waitlist";
     let customer;
 
     if (source === "product-interest" && req.body.productId) {
@@ -584,6 +645,11 @@ router.post("/customers", async (req, res) => {
       );
 
       if (!product) {
+        await safeLogOrderAttempt({
+          ...attemptBase,
+          success: false,
+          failureReason: "Not enough stock"
+        });
         return res.status(400).json({ message: "This product no longer has enough stock for that enquiry." });
       }
 
@@ -594,6 +660,16 @@ router.post("/customers", async (req, res) => {
         productImage: req.body.productImage || product.image || product.images?.[0] || "",
         productPrice: Number(req.body.productPrice || product.price || 0),
         selectedQuantity: quantity
+      });
+
+      await safeLogOrderAttempt({
+        ...attemptBase,
+        productName: req.body.productName || product.name,
+        productImage: req.body.productImage || product.image || product.images?.[0] || "",
+        productPrice: Number(req.body.productPrice || product.price || 0),
+        selectedQuantity: quantity,
+        success: true,
+        failureReason: ""
       });
     } else if (source === "footer-feedback") {
       customer = await Customer.create({
@@ -609,10 +685,34 @@ router.post("/customers", async (req, res) => {
         { ...req.body, source },
         { upsert: true, new: true, setDefaultsOnInsert: true }
       );
+
+      if (attemptBase) {
+        await safeLogOrderAttempt({
+          ...attemptBase,
+          success: false,
+          failureReason: "Missing product selection"
+        });
+      }
     }
 
     res.status(201).json(customer);
   } catch (error) {
+    if (req.body?.source === "product-interest") {
+      await safeLogOrderAttempt({
+        visitorId: req.body.visitorId || "",
+        productId: req.body.productId || "",
+        productName: req.body.productName || "",
+        productImage: req.body.productImage || "",
+        productPrice: Number(req.body.productPrice || 0),
+        name: req.body.name || "",
+        phone: req.body.phone || "",
+        selectedSize: req.body.selectedSize || "",
+        selectedQuantity: Math.max(1, Number(req.body.selectedQuantity || 1)),
+        success: false,
+        failureReason: error?.message || "Unknown error",
+        source: "product-interest"
+      });
+    }
     res.status(400).json({ message: "Failed to save customer" });
   }
 });

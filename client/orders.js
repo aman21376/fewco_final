@@ -17,6 +17,9 @@ function renderOrders(data) {
   document.getElementById("unitsTotal").textContent = data.totals?.totalUnits || 0;
   document.getElementById("uniqueCustomers").textContent = data.totals?.uniqueCustomers || 0;
   document.getElementById("ordersToday").textContent = data.totals?.ordersToday || 0;
+  document.getElementById("attemptedOrders").textContent = data.totals?.attemptedOrders || 0;
+  document.getElementById("successfulOrders").textContent = data.totals?.successfulOrders || 0;
+  document.getElementById("failedOrders").textContent = data.totals?.failedOrders || 0;
   document.getElementById("lastUpdatedAt").textContent = formatDate(data.totals?.lastUpdatedAt);
 
   const container = document.getElementById("ordersList");
@@ -61,6 +64,48 @@ function renderOrders(data) {
             <p class="eyebrow">Saved</p>
             <p class="product-copy">${formatDate(order.createdAt)}</p>
             <p class="product-copy">Source: ${order.source || "-"}</p>
+          </div>
+        </div>
+      </div>
+    </article>
+  `).join("");
+
+  const attemptsContainer = document.getElementById("attemptsList");
+  const attempts = data.attempts || [];
+
+  if (!attempts.length) {
+    attemptsContainer.innerHTML = `<div class="empty-state">No submit attempts logged yet.</div>`;
+    return;
+  }
+
+  attemptsContainer.innerHTML = attempts.map(attempt => `
+    <article class="order-card">
+      <div class="order-card-body">
+        <div class="order-card-head">
+          <div>
+            <p class="eyebrow">${attempt.success ? "Success" : "Failed"}</p>
+            <h3>${attempt.productName || "FewCo Piece"}</h3>
+          </div>
+          <span class="badge ${attempt.success ? "" : "badge-low"}">${attempt.success ? "Saved" : "Failed"}</span>
+        </div>
+        <div class="order-grid">
+          <div class="order-block">
+            <p class="eyebrow">Customer</p>
+            <p class="product-copy"><strong>${attempt.name || "-"}</strong></p>
+            <p class="product-copy">${attempt.phone || "-"}</p>
+          </div>
+          <div class="order-block">
+            <p class="eyebrow">Selection</p>
+            <p class="product-copy">${attempt.selectedSize || "-"} · Qty ${attempt.selectedQuantity || 1}</p>
+            <p class="product-copy">Visitor: ${attempt.visitorId || "-"}</p>
+          </div>
+          <div class="order-block">
+            <p class="eyebrow">Reason</p>
+            <p class="product-copy">${attempt.success ? "Saved correctly" : (attempt.failureReason || "-")}</p>
+          </div>
+          <div class="order-block">
+            <p class="eyebrow">Logged</p>
+            <p class="product-copy">${formatDate(attempt.createdAt)}</p>
           </div>
         </div>
       </div>

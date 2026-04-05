@@ -44,6 +44,18 @@
             <span class="stat-label">Today</span>
             <strong id="ordersToday">0</strong>
           </div>
+          <div class="stat-card">
+            <span class="stat-label">Attempts</span>
+            <strong id="attemptedOrders">0</strong>
+          </div>
+          <div class="stat-card">
+            <span class="stat-label">Successful</span>
+            <strong id="successfulOrders">0</strong>
+          </div>
+          <div class="stat-card">
+            <span class="stat-label">Failed</span>
+            <strong id="failedOrders">0</strong>
+          </div>
         </div>
       </article>
 
@@ -66,6 +78,16 @@
         </div>
       </div>
       <div id="ordersList" class="orders-list"></div>
+    </section>
+
+    <section class="panel admin-panel orders-panel">
+      <div class="admin-panel-head">
+        <div>
+          <p class="eyebrow">Attempt Log</p>
+          <h3>Successful and failed submit attempts</h3>
+        </div>
+      </div>
+      <div id="attemptsList" class="orders-list"></div>
     </section>
   </main>
   <script src="orders.js"></script>

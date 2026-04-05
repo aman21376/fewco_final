@@ -28,10 +28,7 @@ const productScrollKey = "fewco-product-scroll";
 const visitHeartbeatMs = 15000;
 let detailFormState = {
   name: "",
-  phone: "",
-  email: "",
-  city: "",
-  pincode: ""
+  phone: ""
 };
 let detailSuccessState = null;
 
@@ -45,10 +42,7 @@ function captureDetailFormState() {
   if (!form) return;
   detailFormState = {
     name: form.elements.name?.value || "",
-    phone: form.elements.phone?.value || "",
-    email: form.elements.email?.value || "",
-    city: form.elements.city?.value || "",
-    pincode: form.elements.pincode?.value || ""
+    phone: form.elements.phone?.value || ""
   };
 }
 
@@ -192,11 +186,18 @@ async function bootstrap() {
   await Promise.all([loadProducts(), loadSettings(), visitPromise]);
   startVisitHeartbeat();
   renderAll();
-  if (isProductPage && sessionStorage.getItem(productScrollKey) === "detail") {
-    sessionStorage.removeItem(productScrollKey);
-    window.setTimeout(() => {
-      document.getElementById("product")?.scrollIntoView({ behavior: "auto", block: "start" });
-    }, 60);
+  if (isProductPage) {
+    const targetSection = sessionStorage.getItem(productScrollKey);
+    if (targetSection) {
+      sessionStorage.removeItem(productScrollKey);
+      window.setTimeout(() => {
+        if (targetSection === "interest") {
+          document.getElementById("productInterestForm")?.scrollIntoView({ behavior: "auto", block: "start" });
+          return;
+        }
+        document.getElementById("product")?.scrollIntoView({ behavior: "auto", block: "start" });
+      }, 60);
+    }
   }
 }
 
@@ -365,8 +366,9 @@ function renderProductCards(containerId, products) {
           </div>
           <p class="price-meta">MRP <span class="price-strike">₹${product.mrp.toLocaleString("en-IN")}</span></p>
         </div>
+        <p class="card-urgency">${product.soldOut ? "This drop is currently sold out." : `Only ${product.remainingStock} pieces left in this release. No payment now.`}</p>
         <div class="card-actions">
-          <button class="button button-secondary card-cta-button" data-view-product="${product.id}">Pre Order Now</button>
+          <button class="button button-primary card-cta-button" data-preorder-product="${product.id}">Order Now</button>
         </div>
       </div>
     </article>
@@ -530,6 +532,7 @@ function renderProductDetail() {
 
   const image = product.images[selectedImageIndex] || product.images[0];
   const tabs = getProductTabContent(product);
+  const selectedSizeLabel = selectedSize || product.sizes[0] || "Select size";
 
   container.innerHTML = `
     <div class="detail-gallery">
@@ -537,10 +540,18 @@ function renderProductDetail() {
         ${product.images.map((_, index) => `<button class="thumb ${index === selectedImageIndex ? "active" : ""}" data-thumb-index="${index}" aria-label="View image ${index + 1}"></button>`).join("")}
       </div>
       <div class="detail-main-image">
+        <div class="detail-image-topline">
+          <span class="detail-floating-badge">${product.discountPercent}% off</span>
+          <span class="detail-floating-badge subtle">${product.soldOut ? "Sold Out" : `${product.remainingStock} / 100 left`}</span>
+        </div>
         <button class="product-like-button detail-like-button ${product.viewerHasLiked ? "liked" : ""}" type="button" data-like-product="${product.id}" aria-label="Like ${product.name}">
           <span class="product-like-heart" aria-hidden="true">&#9829;</span>
           <span class="product-like-count">${getDisplayLikeCount(product)}</span>
         </button>
+        <div class="detail-image-footer">
+          <span class="detail-floating-chip">FewCo Drop ${product.dropLabel.replace("Drop ", "")}</span>
+          <span class="detail-floating-chip subtle">${product.category === "women" ? "Women" : "Men"}</span>
+        </div>
       </div>
     </div>
     <div class="detail-info">
@@ -555,12 +566,29 @@ function renderProductDetail() {
         <h2>${product.name}</h2>
         <div class="price-stack detail-price-stack">
           <div class="price-row">
+            <span class="detail-off-text">${product.discountPercent}% off</span>
             <p class="price">₹${product.price.toLocaleString("en-IN")}</p>
-            <span class="price-off-badge">${product.discountPercent}% off</span>
+            <p class="price-meta">MRP <span class="price-strike">₹${product.mrp.toLocaleString("en-IN")}</span></p>
           </div>
-          <p class="price-meta">MRP <span class="price-strike">₹${product.mrp.toLocaleString("en-IN")}</span></p>
         </div>
         <p class="product-copy">${product.description}</p>
+        <div class="detail-quick-points">
+          <div class="detail-quick-card">
+            <strong>${product.remainingStock} pieces left</strong>
+            <span>This drop stays limited and returns only after 90 days.</span>
+          </div>
+          <div class="detail-quick-card">
+            <strong>No payment now</strong>
+            <span>Share your interest first and FewCo calls you back.</span>
+          </div>
+        </div>
+        <div class="detail-order-panel">
+          <div class="order-panel-copy">
+            <strong>Want this piece from the current drop?</strong>
+            <span>Choose your size, set the quantity, and send a quick callback request below.</span>
+          </div>
+          <button class="button button-primary order-panel-button" type="button" data-scroll="#productInterestForm">Order This Piece</button>
+        </div>
         <div class="stock-line ${product.lowStock ? "low" : ""}">
           <span>${product.remainingStock} / 100 remaining</span>
           <span>${product.lowStock ? "Low Stock" : "Current release"}</span>
@@ -581,19 +609,29 @@ function renderProductDetail() {
         </div>
       </div>
       <form class="interest-form" id="productInterestForm">
-        <p class="eyebrow">Show Interest</p>
-        <label>Name <span class="required-mark">*</span><input type="text" name="name" placeholder="Your name" value="${detailFormState.name}" required></label>
-        <label>Phone number <span class="required-mark">*</span><input type="tel" name="phone" placeholder="+91 98765 43210" value="${detailFormState.phone}" required></label>
-        <label>Email<input type="email" name="email" placeholder="name@example.com" value="${detailFormState.email}"></label>
-        <label>City<input type="text" name="city" placeholder="Your city" value="${detailFormState.city}"></label>
-        <label>Pincode<input type="text" name="pincode" placeholder="400001" value="${detailFormState.pincode}"></label>
+        <div class="interest-form-head">
+          <p class="eyebrow">Order Request</p>
+          <h3>Reserve a callback for this piece</h3>
+          <p class="form-note form-trust-note">No payment is taken here. Share your name and phone number and our team will call you back for the next step.</p>
+        </div>
+        <div class="cta-trust-inline">
+          <span>Selected size: <strong>${selectedSizeLabel}</strong></span>
+          <span>Quantity: <strong>${selectedQuantity}</strong></span>
+        </div>
+        <label>Your name <span class="required-mark">*</span><input type="text" name="name" placeholder="Enter your full name" value="${detailFormState.name}" required></label>
+        <label>Phone number <span class="required-mark">*</span><input type="tel" name="phone" placeholder="Enter your phone / WhatsApp number" value="${detailFormState.phone}" required></label>
         <div class="detail-actions">
           <button class="button button-primary interest-submit-button" type="submit">Pre Order Now</button>
         </div>
-        <p class="form-note interest-cta-copy">This is a preorder interest request. Once you submit it, our team will call you back with the next steps.</p>
-        <p class="form-note policy-note">Exchange only. Size exchanges depend on stock availability because this is a limited-edition collection.</p>
-        <p class="form-note">Your interest will be saved with the selected size and quantity. No payment is collected now.</p>
+        <p class="form-note interest-cta-copy">Your request is saved with the selected size and quantity. Exchange only, based on size availability.</p>
       </form>
+      <div class="mobile-sticky-order-bar">
+        <div class="mobile-sticky-copy">
+          <strong>${product.price.toLocaleString("en-IN", { style: "currency", currency: "INR", maximumFractionDigits: 0 })}</strong>
+          <span>${selectedSizeLabel} selected</span>
+        </div>
+        <button class="button button-primary mobile-sticky-button" type="button" data-scroll="#productInterestForm">Order Now</button>
+      </div>
       <div>
         <p class="eyebrow">Behind the Piece</p>
         <p class="product-copy">${product.story}</p>
@@ -654,13 +692,17 @@ function startHeroTimer() {
 }
 
 function openProduct(productId) {
+  openProductAt(productId, "detail");
+}
+
+function openProductAt(productId, section = "detail") {
   selectedProductId = productId;
   selectedImageIndex = 0;
   selectedQuantity = 1;
   selectedTab = "details";
-  detailFormState = { name: "", phone: "", email: "", city: "", pincode: "" };
+  detailFormState = { name: "", phone: "" };
   detailSuccessState = null;
-  sessionStorage.setItem(productScrollKey, "detail");
+  sessionStorage.setItem(productScrollKey, section);
   window.location.href = `/product.html?product=${productId}`;
 }
 
@@ -762,6 +804,7 @@ function bindEvents() {
     const modeButton = event.target.closest("[data-shop-mode]");
     const likeButton = event.target.closest("[data-like-product]");
     const viewButton = event.target.closest("[data-view-product]");
+    const preorderButton = event.target.closest("[data-preorder-product]");
     const scrollButton = event.target.closest("[data-scroll]");
     const heroDot = event.target.closest("[data-hero-dot]");
     const thumbButton = event.target.closest("[data-thumb-index]");
@@ -780,6 +823,12 @@ function bindEvents() {
       likeProduct(likeButton.dataset.likeProduct).catch(error => {
         alert(error.message || "Unable to save your like right now.");
       });
+      return;
+    }
+    if (preorderButton) {
+      event.preventDefault();
+      event.stopPropagation();
+      openProductAt(preorderButton.dataset.preorderProduct, "interest");
       return;
     }
     if (viewButton) openProduct(viewButton.dataset.viewProduct);
@@ -862,9 +911,9 @@ function bindEvents() {
         productId: product.id,
         name: formData.get("name"),
         phone: formData.get("phone"),
-        email: formData.get("email"),
-        city: formData.get("city"),
-        pincode: formData.get("pincode"),
+        email: "",
+        city: "",
+        pincode: "",
         source: "product-interest",
         productName: product.name,
         productImage: product.image,
@@ -889,7 +938,7 @@ function bindEvents() {
           selectedSize,
           selectedQuantity: Math.min(5, selectedQuantity)
         };
-        detailFormState = { name: "", phone: "", email: "", city: "", pincode: "" };
+        detailFormState = { name: "", phone: "" };
         renderAll();
         window.setTimeout(() => {
           document.getElementById("product")?.scrollIntoView({ behavior: "auto", block: "start" });

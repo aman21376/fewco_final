@@ -132,6 +132,9 @@ function renderAnalytics(data) {
   document.getElementById("productCount").textContent = data.totals?.preorderClicks || 0;
   document.getElementById("repeatVisitors").textContent = data.totals?.repeatVisitors || 0;
   document.getElementById("preorderRate").textContent = `${data.totals?.preorderConversionRate || 0}%`;
+  document.getElementById("attemptedOrders").textContent = data.totals?.attemptedOrders || 0;
+  document.getElementById("successfulOrders").textContent = data.totals?.successfulOrders || 0;
+  document.getElementById("failedOrders").textContent = data.totals?.failedOrders || 0;
 
   document.getElementById("visitorTableBody").innerHTML = (data.recentVisitors || []).map(visitor => `
     <tr>
