@@ -540,8 +540,8 @@ function renderProductDetail() {
       </div>
       <form class="interest-form" id="productInterestForm">
         <p class="eyebrow">Show Interest</p>
-        <label>Name<input type="text" name="name" placeholder="Your name" value="${detailFormState.name}" required></label>
-        <label>Phone number<input type="tel" name="phone" placeholder="+91 98765 43210" value="${detailFormState.phone}" required></label>
+        <label>Name <span class="required-mark">*</span><input type="text" name="name" placeholder="Your name" value="${detailFormState.name}" required></label>
+        <label>Phone number <span class="required-mark">*</span><input type="tel" name="phone" placeholder="+91 98765 43210" value="${detailFormState.phone}" required></label>
         <label>Email<input type="email" name="email" placeholder="name@example.com" value="${detailFormState.email}"></label>
         <label>City<input type="text" name="city" placeholder="Your city" value="${detailFormState.city}"></label>
         <label>Pincode<input type="text" name="pincode" placeholder="400001" value="${detailFormState.pincode}"></label>

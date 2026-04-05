@@ -1030,6 +1030,11 @@ label {
   letter-spacing: 0.04em;
 }
 
+.required-mark {
+  color: var(--beige);
+  font-weight: 700;
+}
+
 input,
 select,
 textarea {
