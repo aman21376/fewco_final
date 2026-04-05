@@ -48,10 +48,9 @@ function insertInAppBrowserBanner() {
   banner.id = "inAppBrowserBanner";
   banner.innerHTML = `
     <div class="in-app-banner-copy">
-      <strong>For the best view, open this in your browser.</strong>
-      <span>Instagram and Facebook can feel slower inside the app.</span>
+      <strong>You are viewing FewCo inside Instagram or Facebook.</strong>
+      <span>The experience has been optimized for in-app browsing.</span>
     </div>
-    <button class="button button-secondary in-app-banner-button" type="button" id="openExternalBrowserButton">Open in Browser</button>
   `;
 
   if (header && header.parentNode) {
@@ -660,11 +659,6 @@ function openInstagramProfile() {
   }, 900);
 }
 
-function openCurrentPageInBrowser() {
-  const currentUrl = window.location.href;
-  window.open(currentUrl, "_blank", "noopener,noreferrer");
-}
-
 function getFooterFeedbackPayload(form) {
   const formData = new FormData(form);
   const contact = String(formData.get("contact") || "").trim();
@@ -809,9 +803,6 @@ function bindEvents() {
     }
     if (event.target.id === "followInstagramButton") {
       openInstagramProfile();
-    }
-    if (event.target.id === "openExternalBrowserButton") {
-      openCurrentPageInBrowser();
     }
     if (event.target.closest("[data-feedback-type]")) {
       const selectedType = event.target.closest("[data-feedback-type]").dataset.feedbackType;

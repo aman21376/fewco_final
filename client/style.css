@@ -73,10 +73,7 @@ button {
 }
 
 .in-app-banner {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 1rem;
+  display: block;
   padding: 0.95rem 1.25rem;
   border-bottom: 1px solid var(--line);
   background:
@@ -100,11 +97,6 @@ button {
   color: rgba(245, 241, 234, 0.7);
   font-size: 0.84rem;
   line-height: 1.45;
-}
-
-.in-app-banner-button {
-  min-height: 42px;
-  white-space: nowrap;
 }
 
 .countdown-strip,
@@ -2119,15 +2111,6 @@ textarea:focus {
 }
 
 @media (max-width: 640px) {
-  .in-app-banner {
-    flex-direction: column;
-    align-items: stretch;
-  }
-
-  .in-app-banner-button {
-    width: 100%;
-  }
-
   h1 {
     font-size: 3.2rem;
     white-space: normal;
