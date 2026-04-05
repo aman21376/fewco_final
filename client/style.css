@@ -72,6 +72,41 @@ button {
   border-color: var(--line);
 }
 
+.in-app-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.95rem 1.25rem;
+  border-bottom: 1px solid var(--line);
+  background:
+    linear-gradient(180deg, rgba(216, 203, 184, 0.08), rgba(255, 255, 255, 0.02)),
+    rgba(15, 15, 15, 0.96);
+}
+
+.in-app-banner-copy {
+  display: grid;
+  gap: 0.2rem;
+}
+
+.in-app-banner-copy strong {
+  font-size: 0.82rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text);
+}
+
+.in-app-banner-copy span {
+  color: rgba(245, 241, 234, 0.7);
+  font-size: 0.84rem;
+  line-height: 1.45;
+}
+
+.in-app-banner-button {
+  min-height: 42px;
+  white-space: nowrap;
+}
+
 .countdown-strip,
 .ticker-section {
   border-bottom: 1px solid var(--line);
@@ -1937,6 +1972,18 @@ textarea:focus {
     letter-spacing: 0.1em;
   }
 
+  .in-app-banner {
+    padding: 0.85rem 1rem;
+  }
+
+  .in-app-banner-copy strong {
+    font-size: 0.74rem;
+  }
+
+  .in-app-banner-copy span {
+    font-size: 0.76rem;
+  }
+
   .product-body {
     gap: 0.7rem;
     padding: 1rem;
@@ -2072,6 +2119,15 @@ textarea:focus {
 }
 
 @media (max-width: 640px) {
+  .in-app-banner {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .in-app-banner-button {
+    width: 100%;
+  }
+
   h1 {
     font-size: 3.2rem;
     white-space: normal;

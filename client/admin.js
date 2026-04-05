@@ -8,6 +8,7 @@ const carouselForm = document.getElementById("carouselForm");
 const importForm = document.getElementById("importForm");
 const resetButton = document.getElementById("resetProductForm");
 const deleteAllProductsButton = document.getElementById("deleteAllProductsButton");
+const exportAllButton = document.getElementById("exportAllButton");
 
 let products = [];
 
@@ -314,12 +315,36 @@ async function deleteAllProducts() {
   }
 }
 
+async function downloadAllData() {
+  setStatus("Preparing Excel export...");
+
+  try {
+    const response = await fetch(`${ADMIN_API_URL}/export-all`);
+    if (!response.ok) throw new Error("Unable to export admin data");
+
+    const blob = await response.blob();
+    const url = window.URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    const fileName = response.headers.get("Content-Disposition")?.match(/filename="(.+)"/)?.[1] || "fewco-admin-export.xlsx";
+    link.href = url;
+    link.download = fileName;
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    window.URL.revokeObjectURL(url);
+    setStatus("Excel export downloaded.");
+  } catch (error) {
+    setStatus(error.message || "Unable to export admin data right now.");
+  }
+}
+
 function bindEvents() {
   form?.addEventListener("submit", saveProduct);
   carouselForm?.addEventListener("submit", saveCarousel);
   importForm?.addEventListener("submit", importProducts);
   resetButton?.addEventListener("click", resetForm);
   deleteAllProductsButton?.addEventListener("click", deleteAllProducts);
+  exportAllButton?.addEventListener("click", downloadAllData);
 
   document.addEventListener("click", event => {
     const editButton = event.target.closest("[data-edit-product]");

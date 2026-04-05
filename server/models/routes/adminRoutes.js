@@ -9,6 +9,7 @@ import Setting from "../Settings.js";
 import Visitor from "../Visitor.js";
 import Customer from "../Customer.js";
 import HeroReaction from "../HeroReaction.js";
+import ProductReaction from "../ProductReaction.js";
 
 const router = express.Router();
 const SETTINGS_KEY = "global";
@@ -371,6 +372,187 @@ router.get("/orders", async (req, res) => {
     });
   } catch (error) {
     res.status(500).json({ message: "Failed to load order details" });
+  }
+});
+
+router.get("/export-all", async (req, res) => {
+  try {
+    const [products, visitors, customers, orders, heroLikes, productLikes, settings, visitorTotals] = await Promise.all([
+      Product.find().sort({ priority: -1, createdAt: -1, _id: -1 }).lean(),
+      Visitor.find().sort({ lastSeenAt: -1 }).lean(),
+      Customer.find().sort({ createdAt: -1 }).lean(),
+      Customer.find({ source: "product-interest" }).sort({ createdAt: -1 }).lean(),
+      HeroReaction.find().sort({ createdAt: -1 }).lean(),
+      ProductReaction.find().sort({ createdAt: -1 }).lean(),
+      getSettings(),
+      Visitor.aggregate([
+        {
+          $group: {
+            _id: null,
+            totalVisits: { $sum: "$visitCount" },
+            uniqueVisitors: { $sum: 1 },
+            averageDurationMs: {
+              $avg: {
+                $max: [
+                  { $subtract: ["$lastSeenAt", "$firstSeenAt"] },
+                  0
+                ]
+              }
+            },
+            preorderClicks: {
+              $sum: {
+                $cond: [{ $eq: ["$preOrderClicked", true] }, 1, 0]
+              }
+            },
+            repeatVisitors: {
+              $sum: {
+                $cond: [{ $gt: ["$visitCount", 1] }, 1, 0]
+              }
+            }
+          }
+        }
+      ])
+    ]);
+
+    const likeCountByProductId = productLikes.reduce((map, reaction) => {
+      const key = String(reaction.productId || "");
+      map.set(key, (map.get(key) || 0) + 1);
+      return map;
+    }, new Map());
+
+    const workbook = XLSX.utils.book_new();
+    const totals = visitorTotals[0] || {};
+    const summaryRows = [
+      { metric: "Generated At", value: new Date().toISOString() },
+      { metric: "Total Visits", value: totals.totalVisits || 0 },
+      { metric: "Unique Visitors", value: totals.uniqueVisitors || 0 },
+      { metric: "Average Duration (ms)", value: Math.round(totals.averageDurationMs || 0) },
+      { metric: "Preorder Clicks", value: totals.preorderClicks || 0 },
+      { metric: "Repeat Visitors", value: totals.repeatVisitors || 0 },
+      { metric: "Customers / Enquiries", value: customers.length },
+      { metric: "Product Interest Orders", value: orders.length },
+      { metric: "Hero Likes", value: heroLikes.length },
+      { metric: "Product Likes", value: productLikes.length },
+      { metric: "Products", value: products.length }
+    ];
+
+    const productRows = products.map(product => ({
+      id: String(product._id),
+      name: product.name || "",
+      category: product.category || "",
+      gender: product.gender || "",
+      price: Number(product.price || 0),
+      priority: Number(product.priority || 0),
+      remainingStock: Number(product.remainingStock || 0),
+      totalStock: Number(product.totalStock || 100),
+      likes: likeCountByProductId.get(String(product._id)) || 0,
+      sizes: Array.isArray(product.sizes) ? product.sizes.join(", ") : "",
+      fit: product.fit || "",
+      featured: Boolean(product.featured),
+      addedBy: product.addedBy || "",
+      listingImage: product.listingImage || product.image || "",
+      createdAt: product.createdAt || "",
+      updatedAt: product.updatedAt || ""
+    }));
+
+    const visitorRows = visitors.map(visitor => ({
+      visitorId: visitor.visitorId || "",
+      path: visitor.path || "",
+      visitCount: Number(visitor.visitCount || 0),
+      firstSeenAt: visitor.firstSeenAt || "",
+      lastSeenAt: visitor.lastSeenAt || "",
+      durationMs: Math.max(0, new Date(visitor.lastSeenAt).getTime() - new Date(visitor.firstSeenAt).getTime()),
+      preOrderClicked: Boolean(visitor.preOrderClicked),
+      preOrderClickedAt: visitor.preOrderClickedAt || "",
+      userAgent: visitor.userAgent || ""
+    }));
+
+    const customerRows = customers.map(customer => ({
+      id: String(customer._id),
+      source: customer.source || "",
+      name: customer.name || "",
+      phone: customer.phone || "",
+      email: customer.email || "",
+      city: customer.city || "",
+      pincode: customer.pincode || "",
+      visitorId: customer.visitorId || "",
+      productId: customer.productId || "",
+      productName: customer.productName || "",
+      productPrice: Number(customer.productPrice || 0),
+      productImage: customer.productImage || "",
+      selectedSize: customer.selectedSize || "",
+      selectedQuantity: Number(customer.selectedQuantity || 0),
+      selectedVariant: customer.selectedVariant || "",
+      notes: customer.notes || "",
+      createdAt: customer.createdAt || ""
+    }));
+
+    const orderRows = orders.map(order => ({
+      id: String(order._id),
+      createdAt: order.createdAt || "",
+      name: order.name || "",
+      phone: order.phone || "",
+      email: order.email || "",
+      city: order.city || "",
+      pincode: order.pincode || "",
+      visitorId: order.visitorId || "",
+      productId: order.productId || "",
+      productName: order.productName || "",
+      productPrice: Number(order.productPrice || 0),
+      selectedSize: order.selectedSize || "",
+      selectedQuantity: Number(order.selectedQuantity || 0),
+      selectedVariant: order.selectedVariant || "",
+      notes: order.notes || ""
+    }));
+
+    const heroLikeRows = heroLikes.map(reaction => ({
+      id: String(reaction._id),
+      visitorId: reaction.visitorId || "",
+      imageUrl: reaction.imageUrl || "",
+      slideIndex: Number(reaction.slideIndex || 0),
+      createdAt: reaction.createdAt || ""
+    }));
+
+    const productLikeRows = productLikes.map(reaction => ({
+      id: String(reaction._id),
+      visitorId: reaction.visitorId || "",
+      productId: reaction.productId || "",
+      createdAt: reaction.createdAt || ""
+    }));
+
+    const settingsRows = [
+      {
+        key: settings.key || SETTINGS_KEY,
+        heroImage1: settings.heroImages?.[0] || "",
+        heroImage2: settings.heroImages?.[1] || "",
+        heroImage3: settings.heroImages?.[2] || "",
+        heroImage4: settings.heroImages?.[3] || "",
+        heroImage5: settings.heroImages?.[4] || ""
+      }
+    ];
+
+    [
+      ["Overview", summaryRows],
+      ["Products", productRows],
+      ["Visitors", visitorRows],
+      ["Enquiries", customerRows],
+      ["Orders", orderRows],
+      ["HeroLikes", heroLikeRows],
+      ["ProductLikes", productLikeRows],
+      ["Settings", settingsRows]
+    ].forEach(([name, rows]) => {
+      const sheet = XLSX.utils.json_to_sheet(rows);
+      XLSX.utils.book_append_sheet(workbook, sheet, name);
+    });
+
+    const workbookBuffer = XLSX.write(workbook, { type: "buffer", bookType: "xlsx" });
+    const fileName = `fewco-admin-export-${new Date().toISOString().slice(0, 10)}.xlsx`;
+
+    res.setHeader("Content-Type", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+    res.setHeader("Content-Disposition", `attachment; filename="${fileName}"`);
+    res.send(workbookBuffer);
+  } catch (error) {
+    res.status(500).json({ message: "Failed to export admin data" });
   }
 });
 

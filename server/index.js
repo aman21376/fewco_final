@@ -54,6 +54,7 @@ app.get("/api/health", (req, res) => {
 
 app.use("/api/admin/analytics", requireAdminAuth);
 app.use("/api/admin/orders", requireAdminAuth);
+app.use("/api/admin/export-all", requireAdminAuth);
 app.use("/api/admin/customers", (req, res, next) => {
   if (req.method === "GET") {
     return requireAdminAuth(req, res, next);

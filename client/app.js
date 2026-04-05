@@ -33,6 +33,32 @@ let detailFormState = {
 };
 let detailSuccessState = null;
 
+function isInAppBrowser() {
+  const userAgent = navigator.userAgent || "";
+  return /Instagram|FBAN|FBAV|FB_IAB|FBIOS|FB4A|Facebook/i.test(userAgent);
+}
+
+function insertInAppBrowserBanner() {
+  if (!isInAppBrowser() || document.getElementById("inAppBrowserBanner")) return;
+  document.body.classList.add("in-app-browser");
+
+  const header = document.getElementById("siteHeader");
+  const banner = document.createElement("div");
+  banner.className = "in-app-banner";
+  banner.id = "inAppBrowserBanner";
+  banner.innerHTML = `
+    <div class="in-app-banner-copy">
+      <strong>For the best view, open this in your browser.</strong>
+      <span>Instagram and Facebook can feel slower inside the app.</span>
+    </div>
+    <button class="button button-secondary in-app-banner-button" type="button" id="openExternalBrowserButton">Open in Browser</button>
+  `;
+
+  if (header && header.parentNode) {
+    header.insertAdjacentElement("afterend", banner);
+  }
+}
+
 function captureDetailFormState() {
   const form = document.getElementById("productInterestForm");
   if (!form) return;
@@ -180,6 +206,7 @@ function getFallbackProducts() {
 }
 
 async function bootstrap() {
+  insertInAppBrowserBanner();
   await trackVisit();
   await Promise.all([loadProducts(), loadSettings()]);
   renderAll();
@@ -607,6 +634,7 @@ function setHeroSlide(index) {
 
 function startHeroTimer() {
   clearInterval(heroTimer);
+  if (isInAppBrowser()) return;
   heroTimer = setInterval(() => setHeroSlide(heroIndex + 1), 5000);
 }
 
@@ -630,6 +658,11 @@ function openInstagramProfile() {
       window.open(instagramProfileUrl, "_blank", "noopener,noreferrer");
     }
   }, 900);
+}
+
+function openCurrentPageInBrowser() {
+  const currentUrl = window.location.href;
+  window.open(currentUrl, "_blank", "noopener,noreferrer");
 }
 
 function getFooterFeedbackPayload(form) {
@@ -776,6 +809,9 @@ function bindEvents() {
     }
     if (event.target.id === "followInstagramButton") {
       openInstagramProfile();
+    }
+    if (event.target.id === "openExternalBrowserButton") {
+      openCurrentPageInBrowser();
     }
     if (event.target.closest("[data-feedback-type]")) {
       const selectedType = event.target.closest("[data-feedback-type]").dataset.feedbackType;
