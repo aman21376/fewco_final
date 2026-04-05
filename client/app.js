@@ -38,26 +38,6 @@ function isInAppBrowser() {
   return /Instagram|FBAN|FBAV|FB_IAB|FBIOS|FB4A|Facebook/i.test(userAgent);
 }
 
-function insertInAppBrowserBanner() {
-  if (!isInAppBrowser() || document.getElementById("inAppBrowserBanner")) return;
-  document.body.classList.add("in-app-browser");
-
-  const header = document.getElementById("siteHeader");
-  const banner = document.createElement("div");
-  banner.className = "in-app-banner";
-  banner.id = "inAppBrowserBanner";
-  banner.innerHTML = `
-    <div class="in-app-banner-copy">
-      <strong>You are viewing FewCo inside Instagram or Facebook.</strong>
-      <span>The experience has been optimized for in-app browsing.</span>
-    </div>
-  `;
-
-  if (header && header.parentNode) {
-    header.insertAdjacentElement("afterend", banner);
-  }
-}
-
 function captureDetailFormState() {
   const form = document.getElementById("productInterestForm");
   if (!form) return;
@@ -205,7 +185,6 @@ function getFallbackProducts() {
 }
 
 async function bootstrap() {
-  insertInAppBrowserBanner();
   await trackVisit();
   await Promise.all([loadProducts(), loadSettings()]);
   renderAll();
