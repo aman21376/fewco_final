@@ -113,7 +113,7 @@ function renderProductList() {
         <p class="eyebrow">${product.category || product.gender || "drop piece"}</p>
         <h4>${product.name}</h4>
         <p class="product-copy">₹${Number(product.price || 0).toLocaleString("en-IN")}</p>
-        <p class="product-copy">Priority ${product.priority || 0} · ${product.remainingStock || 0}/${product.totalStock || 100} stock</p>
+        <p class="product-copy">Priority ${product.priority || 0} · Likes ${product.likeCount || 0} · ${product.remainingStock || 0}/${product.totalStock || 100} stock</p>
       </div>
       <div class="admin-product-actions">
         <button class="button button-secondary" data-edit-product="${product._id}">Edit</button>

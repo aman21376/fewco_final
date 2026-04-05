@@ -474,7 +474,12 @@ function renderProductDetail() {
       <div class="thumb-list">
         ${product.images.map((_, index) => `<button class="thumb ${index === selectedImageIndex ? "active" : ""}" data-thumb-index="${index}" aria-label="View image ${index + 1}"></button>`).join("")}
       </div>
-      <div class="detail-main-image"></div>
+      <div class="detail-main-image">
+        <button class="product-like-button detail-like-button ${product.viewerHasLiked ? "liked" : ""}" type="button" data-like-product="${product.id}" aria-label="Like ${product.name}">
+          <span class="product-like-heart" aria-hidden="true">&#9829;</span>
+          <span class="product-like-count">${product.displayLikeCount || 0}</span>
+        </button>
+      </div>
     </div>
     <div class="detail-info">
       <div class="detail-utility-row">
@@ -485,10 +490,6 @@ function renderProductDetail() {
           <span class="badge ${product.soldOut ? "soldout" : ""}">${product.soldOut ? "Sold Out" : "Limited Edition"}</span>
           <span class="tag">${product.dropLabel}</span>
         </div>
-        <button class="product-like-button detail-like-button ${product.viewerHasLiked ? "liked" : ""}" type="button" data-like-product="${product.id}" aria-label="Like ${product.name}">
-          <span class="product-like-heart" aria-hidden="true">&#9829;</span>
-          <span class="product-like-count">${product.displayLikeCount || 0}</span>
-        </button>
         <h2>${product.name}</h2>
         <p class="price">₹${product.price.toLocaleString("en-IN")}</p>
         <p class="product-copy">${product.description}</p>
