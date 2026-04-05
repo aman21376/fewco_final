@@ -72,6 +72,17 @@ function normalizeSizes(sizes, category) {
   return ["XS", "S", "M", "L", "XL", "XXL", "3XL"];
 }
 
+function getPricingMeta(price) {
+  const mrp = 1999;
+  const finalPrice = Math.max(0, Number(price) || 0);
+  const discountPercent = finalPrice >= mrp ? 0 : Math.round(((mrp - finalPrice) / mrp) * 100);
+  return { mrp, finalPrice, discountPercent };
+}
+
+function getDisplayLikeCount(product) {
+  return (product.displayLikeCount ?? (getStableDisplayLikeBase(product) + (product.likeCount || 0))) || 0;
+}
+
 function getStableDisplayLikeBase(product) {
   const source = String(product._id || product.id || product.name || "fewco-piece");
   let hash = 0;
@@ -91,11 +102,14 @@ function buildProduct(product, index) {
   const listingImage = product.listingImage || product.image || normalizedImages[0];
   const realLikeCount = Math.max(0, Number(product.likeCount) || 0);
   const displayLikeCount = getStableDisplayLikeBase(product) + realLikeCount;
+  const pricing = getPricingMeta(product.price);
 
   return {
     id: product._id || `${product.name}-${index}`,
     name: product.name || "FewCo Piece",
-    price: Number(product.price) || 0,
+    price: pricing.finalPrice,
+    mrp: pricing.mrp,
+    discountPercent: pricing.discountPercent,
     image: listingImage,
     mainImage: product.image || normalizedImages[0],
     images: normalizedImages,
@@ -290,7 +304,7 @@ function renderProductCards(containerId, products) {
       <div class="product-image" style="--card-image:url('${product.image}')">
         <button class="product-like-button ${product.viewerHasLiked ? "liked" : ""}" type="button" data-like-product="${product.id}" aria-label="Like ${product.name}">
           <span class="product-like-heart" aria-hidden="true">&#9829;</span>
-          <span class="product-like-count">${product.displayLikeCount || 0}</span>
+          <span class="product-like-count">${getDisplayLikeCount(product)}</span>
         </button>
         <div class="image-stock-badge ${product.lowStock ? "low" : ""} ${product.soldOut ? "soldout" : ""}">
           ${product.soldOut ? "Sold Out" : `${product.remainingStock} / 100 remaining`}
@@ -302,7 +316,13 @@ function renderProductCards(containerId, products) {
           <span class="tag">${capitalize(product.category)}</span>
         </div>
         <h3>${product.name}</h3>
-        <p class="price">₹${product.price.toLocaleString("en-IN")}</p>
+        <div class="price-stack">
+          <div class="price-row">
+            <p class="price">₹${product.price.toLocaleString("en-IN")}</p>
+            <span class="price-off-badge">${product.discountPercent}% off</span>
+          </div>
+          <p class="price-meta">MRP <span class="price-strike">₹${product.mrp.toLocaleString("en-IN")}</span></p>
+        </div>
         <div class="card-actions">
           <button class="button button-secondary card-cta-button" data-view-product="${product.id}">Pre Order Now</button>
         </div>
@@ -477,7 +497,7 @@ function renderProductDetail() {
       <div class="detail-main-image">
         <button class="product-like-button detail-like-button ${product.viewerHasLiked ? "liked" : ""}" type="button" data-like-product="${product.id}" aria-label="Like ${product.name}">
           <span class="product-like-heart" aria-hidden="true">&#9829;</span>
-          <span class="product-like-count">${product.displayLikeCount || 0}</span>
+          <span class="product-like-count">${getDisplayLikeCount(product)}</span>
         </button>
       </div>
     </div>
@@ -491,7 +511,13 @@ function renderProductDetail() {
           <span class="tag">${product.dropLabel}</span>
         </div>
         <h2>${product.name}</h2>
-        <p class="price">₹${product.price.toLocaleString("en-IN")}</p>
+        <div class="price-stack detail-price-stack">
+          <div class="price-row">
+            <p class="price">₹${product.price.toLocaleString("en-IN")}</p>
+            <span class="price-off-badge">${product.discountPercent}% off</span>
+          </div>
+          <p class="price-meta">MRP <span class="price-strike">₹${product.mrp.toLocaleString("en-IN")}</span></p>
+        </div>
         <p class="product-copy">${product.description}</p>
         <div class="stock-line ${product.lowStock ? "low" : ""}">
           <span>${product.remainingStock} / 100 remaining</span>
@@ -648,17 +674,44 @@ async function likeCurrentHeroIdea() {
 async function likeProduct(productId) {
   if (!currentVisitorId || !productId) return;
 
-  const response = await fetch(`${PRODUCT_API_URL}/${productId}/like`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ visitorId: currentVisitorId })
-  });
-  const data = await response.json();
-  if (!response.ok) {
-    throw new Error(data.message || "Unable to save product like");
-  }
-  await loadProducts();
+  const product = allProducts.find(item => item.id === productId);
+  if (!product) return;
+
+  const previousState = {
+    likeCount: product.likeCount || 0,
+    displayLikeCount: getDisplayLikeCount(product),
+    viewerHasLiked: Boolean(product.viewerHasLiked)
+  };
+
+  const nextViewerHasLiked = !previousState.viewerHasLiked;
+  const nextLikeCount = Math.max(0, previousState.likeCount + (nextViewerHasLiked ? 1 : -1));
+  product.viewerHasLiked = nextViewerHasLiked;
+  product.likeCount = nextLikeCount;
+  product.displayLikeCount = getStableDisplayLikeBase(product) + nextLikeCount;
   renderAll();
+
+  try {
+    const response = await fetch(`${PRODUCT_API_URL}/${productId}/like`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ visitorId: currentVisitorId })
+    });
+    const data = await response.json();
+    if (!response.ok) {
+      throw new Error(data.message || "Unable to save product like");
+    }
+
+    product.viewerHasLiked = Boolean(data.viewerHasLiked);
+    product.likeCount = Math.max(0, Number(data.likeCount) || 0);
+    product.displayLikeCount = getStableDisplayLikeBase(product) + product.likeCount;
+    renderAll();
+  } catch (error) {
+    product.viewerHasLiked = previousState.viewerHasLiked;
+    product.likeCount = previousState.likeCount;
+    product.displayLikeCount = previousState.displayLikeCount;
+    renderAll();
+    throw error;
+  }
 }
 
 function bindEvents() {

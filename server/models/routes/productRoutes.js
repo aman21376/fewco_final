@@ -77,14 +77,18 @@ router.post("/:id/like", async (req, res) => {
       return res.status(404).json({ message: "Product not found" });
     }
 
-    await ProductReaction.findOneAndUpdate(
-      { visitorId, productId: String(product._id) },
-      { visitorId, productId: String(product._id) },
-      { upsert: true, new: true, setDefaultsOnInsert: true }
-    );
+    const existingReaction = await ProductReaction.findOne({ visitorId, productId: String(product._id) });
+    let viewerHasLiked = true;
+
+    if (existingReaction) {
+      await ProductReaction.deleteOne({ _id: existingReaction._id });
+      viewerHasLiked = false;
+    } else {
+      await ProductReaction.create({ visitorId, productId: String(product._id) });
+    }
 
     const likeCount = await ProductReaction.countDocuments({ productId: String(product._id) });
-    res.status(201).json({ ok: true, likeCount, viewerHasLiked: true });
+    res.status(200).json({ ok: true, likeCount, viewerHasLiked });
   } catch (error) {
     if (error.code === 11000) {
       const likeCount = await ProductReaction.countDocuments({ productId: String(req.params.id) });

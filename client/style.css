@@ -50,6 +50,7 @@ textarea {
 
 button {
   cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
 }
 
 .page-shell {
@@ -644,6 +645,9 @@ h3 {
   color: var(--text);
   backdrop-filter: blur(8px);
   box-shadow: 0 12px 28px rgba(0, 0, 0, 0.2);
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
 }
 
 .product-like-button.liked {
@@ -664,6 +668,11 @@ h3 {
   font-size: 0.58rem;
   letter-spacing: 0.07em;
   text-transform: uppercase;
+}
+
+.product-like-button:focus,
+.product-like-button:active {
+  outline: none;
 }
 
 .image-stock-badge.low {
@@ -752,6 +761,57 @@ h3 {
 .price {
   font-size: 1.1rem;
   font-weight: 700;
+  margin: 0;
+}
+
+.price-stack {
+  display: grid;
+  gap: 0.3rem;
+}
+
+.price-row {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  flex-wrap: wrap;
+}
+
+.detail-price-stack {
+  gap: 0.4rem;
+}
+
+.detail-price-stack .price {
+  font-size: clamp(1.55rem, 3vw, 2rem);
+}
+
+.price-meta {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.76rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.price-strike {
+  text-decoration: line-through;
+  text-decoration-thickness: 1px;
+  text-decoration-color: rgba(245, 241, 234, 0.42);
+}
+
+.price-off-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 26px;
+  padding: 0 0.7rem;
+  border-radius: 999px;
+  background: rgba(216, 203, 184, 0.12);
+  border: 1px solid rgba(216, 203, 184, 0.28);
+  color: var(--beige);
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
 }
 
 .stock-line {
