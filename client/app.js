@@ -23,6 +23,7 @@ let currentVisitorId = "";
 let hasTrackedPreorderClick = false;
 const isProductPage = window.location.pathname.toLowerCase().endsWith("/product.html") || window.location.pathname.toLowerCase().endsWith("product.html");
 const instagramProfileUrl = "https://www.instagram.com/fewco.in?igsh=MWxnZ3F2d2trd28zNA%3D%3D&utm_source=qr";
+const productScrollKey = "fewco-product-scroll";
 let detailFormState = {
   name: "",
   phone: "",
@@ -153,6 +154,12 @@ function getFallbackProducts() {
 async function bootstrap() {
   await Promise.all([loadProducts(), loadSettings(), trackVisit()]);
   renderAll();
+  if (isProductPage && sessionStorage.getItem(productScrollKey) === "detail") {
+    sessionStorage.removeItem(productScrollKey);
+    window.setTimeout(() => {
+      document.getElementById("product")?.scrollIntoView({ behavior: "auto", block: "start" });
+    }, 60);
+  }
 }
 
 async function loadProducts() {
@@ -559,6 +566,7 @@ function openProduct(productId) {
   selectedTab = "details";
   detailFormState = { name: "", phone: "", email: "", city: "", pincode: "" };
   detailSuccessState = null;
+  sessionStorage.setItem(productScrollKey, "detail");
   window.location.href = `/product.html?product=${productId}`;
 }
 
@@ -646,7 +654,7 @@ function bindEvents() {
     }
     if (qtyButton) {
       captureDetailFormState();
-      selectedQuantity = Math.max(1, selectedQuantity + Number(qtyButton.dataset.qty));
+      selectedQuantity = Math.min(5, Math.max(1, selectedQuantity + Number(qtyButton.dataset.qty)));
       renderProductDetail();
     }
     if (tabButton) {
@@ -716,9 +724,9 @@ function bindEvents() {
         productImage: product.image,
         productPrice: product.price,
         selectedSize,
-        selectedQuantity,
+        selectedQuantity: Math.min(5, selectedQuantity),
         selectedVariant: `${capitalize(product.gender)} / ${capitalize(product.category)}`,
-        notes: `Interest for ${product.name} | size ${selectedSize} | quantity ${selectedQuantity}`
+        notes: `Interest for ${product.name} | size ${selectedSize} | quantity ${Math.min(5, selectedQuantity)}`
       };
 
       try {
@@ -733,10 +741,13 @@ function bindEvents() {
         detailSuccessState = {
           productId: product.id,
           selectedSize,
-          selectedQuantity
+          selectedQuantity: Math.min(5, selectedQuantity)
         };
         detailFormState = { name: "", phone: "", email: "", city: "", pincode: "" };
         renderAll();
+        window.setTimeout(() => {
+          document.getElementById("product")?.scrollIntoView({ behavior: "auto", block: "start" });
+        }, 40);
       } catch (error) {
         alert(error.message || "Unable to save your product interest right now.");
       }
