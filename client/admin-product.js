@@ -2,6 +2,7 @@ const PRODUCT_API_URL = "/api/products";
 
 const form = document.getElementById("productEditorForm");
 const statusText = document.getElementById("editorStatus");
+const likeCountText = document.getElementById("editorLikeCount");
 const titleText = document.getElementById("editorTitle");
 const preview = document.getElementById("listingPreview");
 const imageOptions = document.getElementById("supplierImageOptions");
@@ -84,6 +85,7 @@ function fillForm(product) {
   document.getElementById("remaining").value = product.remainingStock || 100;
   document.getElementById("featured").checked = Boolean(product.featured);
   titleText.textContent = product.name || "Product editor";
+  likeCountText.textContent = `Likes: ${product.likeCount || 0}`;
   updateListingPreview();
 }
 

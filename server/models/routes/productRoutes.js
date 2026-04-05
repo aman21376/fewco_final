@@ -1,13 +1,29 @@
 import express from "express";
 import Product from "../Products.js";
+import ProductReaction from "../ProductReaction.js";
 
 const router = express.Router();
+
+async function serializeProduct(product, visitorId = "") {
+  const likeCount = await ProductReaction.countDocuments({ productId: String(product._id) });
+  const viewerHasLiked = visitorId
+    ? Boolean(await ProductReaction.findOne({ productId: String(product._id), visitorId }).lean())
+    : false;
+
+  return {
+    ...product.toObject(),
+    likeCount,
+    viewerHasLiked
+  };
+}
 
 // get all
 router.get("/", async (req, res) => {
   try {
     const products = await Product.find().sort({ priority: -1, createdAt: -1, _id: -1 });
-    res.json(products);
+    const visitorId = String(req.query.visitorId || "").trim();
+    const serialized = await Promise.all(products.map(product => serializeProduct(product, visitorId)));
+    res.json(serialized);
   } catch (error) {
     res.status(500).json({ message: "Failed to fetch products" });
   }
@@ -42,9 +58,39 @@ router.get("/:id", async (req, res) => {
     if (!product) {
       return res.status(404).json({ message: "Product not found" });
     }
-    res.json(product);
+    const visitorId = String(req.query.visitorId || "").trim();
+    res.json(await serializeProduct(product, visitorId));
   } catch (error) {
     res.status(400).json({ message: "Failed to fetch product" });
+  }
+});
+
+router.post("/:id/like", async (req, res) => {
+  try {
+    const visitorId = String(req.body.visitorId || "").trim();
+    if (!visitorId) {
+      return res.status(400).json({ message: "visitorId is required" });
+    }
+
+    const product = await Product.findById(req.params.id);
+    if (!product) {
+      return res.status(404).json({ message: "Product not found" });
+    }
+
+    await ProductReaction.findOneAndUpdate(
+      { visitorId, productId: String(product._id) },
+      { visitorId, productId: String(product._id) },
+      { upsert: true, new: true, setDefaultsOnInsert: true }
+    );
+
+    const likeCount = await ProductReaction.countDocuments({ productId: String(product._id) });
+    res.status(201).json({ ok: true, likeCount, viewerHasLiked: true });
+  } catch (error) {
+    if (error.code === 11000) {
+      const likeCount = await ProductReaction.countDocuments({ productId: String(req.params.id) });
+      return res.json({ ok: true, duplicate: true, likeCount, viewerHasLiked: true });
+    }
+    res.status(400).json({ message: "Failed to save product like" });
   }
 });
 

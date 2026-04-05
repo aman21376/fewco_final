@@ -72,6 +72,15 @@ function normalizeSizes(sizes, category) {
   return ["XS", "S", "M", "L", "XL", "XXL", "3XL"];
 }
 
+function getStableDisplayLikeBase(product) {
+  const source = String(product._id || product.id || product.name || "fewco-piece");
+  let hash = 0;
+  for (let index = 0; index < source.length; index += 1) {
+    hash = (hash * 31 + source.charCodeAt(index)) % 9973;
+  }
+  return 81 + (hash % 37);
+}
+
 function buildProduct(product, index) {
   const category = deriveCategory(product);
   const totalStock = 100;
@@ -80,6 +89,8 @@ function buildProduct(product, index) {
   const images = (Array.isArray(product.images) ? product.images.filter(Boolean) : []).slice(0, 4);
   const normalizedImages = (images.length ? images : [product.image]).filter(Boolean);
   const listingImage = product.listingImage || product.image || normalizedImages[0];
+  const realLikeCount = Math.max(0, Number(product.likeCount) || 0);
+  const displayLikeCount = getStableDisplayLikeBase(product) + realLikeCount;
 
   return {
     id: product._id || `${product.name}-${index}`,
@@ -104,7 +115,10 @@ function buildProduct(product, index) {
     remainingRatio,
     lowStock: remainingStock > 0 && remainingStock <= 25,
     soldOut: remainingStock <= 0,
-    dropLabel: `Drop ${String(7 - (index % 4)).padStart(2, "0")}`
+    dropLabel: `Drop ${String(7 - (index % 4)).padStart(2, "0")}`,
+    likeCount: realLikeCount,
+    displayLikeCount,
+    viewerHasLiked: Boolean(product.viewerHasLiked)
   };
 }
 
@@ -152,7 +166,8 @@ function getFallbackProducts() {
 }
 
 async function bootstrap() {
-  await Promise.all([loadProducts(), loadSettings(), trackVisit()]);
+  await trackVisit();
+  await Promise.all([loadProducts(), loadSettings()]);
   renderAll();
   if (isProductPage && sessionStorage.getItem(productScrollKey) === "detail") {
     sessionStorage.removeItem(productScrollKey);
@@ -164,7 +179,8 @@ async function bootstrap() {
 
 async function loadProducts() {
   try {
-    const response = await fetch(PRODUCT_API_URL);
+    const query = currentVisitorId ? `?visitorId=${encodeURIComponent(currentVisitorId)}` : "";
+    const response = await fetch(`${PRODUCT_API_URL}${query}`);
     if (!response.ok) throw new Error("Request failed");
     const data = await response.json();
     allProducts = (Array.isArray(data) && data.length ? data : getFallbackProducts())
@@ -272,6 +288,10 @@ function renderProductCards(containerId, products) {
   container.innerHTML = products.map(product => `
     <article class="product-card" data-view-product="${product.id}" tabindex="0">
       <div class="product-image" style="--card-image:url('${product.image}')">
+        <button class="product-like-button ${product.viewerHasLiked ? "liked" : ""}" type="button" data-like-product="${product.id}" aria-label="Like ${product.name}">
+          <span class="product-like-heart" aria-hidden="true">&#9829;</span>
+          <span class="product-like-count">${product.displayLikeCount || 0}</span>
+        </button>
         <div class="image-stock-badge ${product.lowStock ? "low" : ""} ${product.soldOut ? "soldout" : ""}">
           ${product.soldOut ? "Sold Out" : `${product.remainingStock} / 100 remaining`}
         </div>
@@ -465,6 +485,10 @@ function renderProductDetail() {
           <span class="badge ${product.soldOut ? "soldout" : ""}">${product.soldOut ? "Sold Out" : "Limited Edition"}</span>
           <span class="tag">${product.dropLabel}</span>
         </div>
+        <button class="product-like-button detail-like-button ${product.viewerHasLiked ? "liked" : ""}" type="button" data-like-product="${product.id}" aria-label="Like ${product.name}">
+          <span class="product-like-heart" aria-hidden="true">&#9829;</span>
+          <span class="product-like-count">${product.displayLikeCount || 0}</span>
+        </button>
         <h2>${product.name}</h2>
         <p class="price">₹${product.price.toLocaleString("en-IN")}</p>
         <p class="product-copy">${product.description}</p>
@@ -620,9 +644,26 @@ async function likeCurrentHeroIdea() {
   }
 }
 
+async function likeProduct(productId) {
+  if (!currentVisitorId || !productId) return;
+
+  const response = await fetch(`${PRODUCT_API_URL}/${productId}/like`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ visitorId: currentVisitorId })
+  });
+  const data = await response.json();
+  if (!response.ok) {
+    throw new Error(data.message || "Unable to save product like");
+  }
+  await loadProducts();
+  renderAll();
+}
+
 function bindEvents() {
   document.addEventListener("click", event => {
     const modeButton = event.target.closest("[data-shop-mode]");
+    const likeButton = event.target.closest("[data-like-product]");
     const viewButton = event.target.closest("[data-view-product]");
     const scrollButton = event.target.closest("[data-scroll]");
     const heroDot = event.target.closest("[data-hero-dot]");
@@ -635,6 +676,14 @@ function bindEvents() {
       shopMode = modeButton.dataset.shopMode;
       renderShopModeToggle();
       renderProductCards("shopProducts", getShopProducts());
+    }
+    if (likeButton) {
+      event.preventDefault();
+      event.stopPropagation();
+      likeProduct(likeButton.dataset.likeProduct).catch(error => {
+        alert(error.message || "Unable to save your like right now.");
+      });
+      return;
     }
     if (viewButton) openProduct(viewButton.dataset.viewProduct);
     if (scrollButton) document.querySelector(scrollButton.dataset.scroll)?.scrollIntoView({ behavior: "smooth", block: "start" });
