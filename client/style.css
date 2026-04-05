@@ -470,6 +470,31 @@ h3 {
   white-space: nowrap;
 }
 
+.shop-loading-note {
+  display: none;
+  align-items: center;
+  gap: 0.55rem;
+  margin-top: 0.65rem;
+  color: rgba(216, 203, 184, 0.82);
+  font-size: 0.82rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.shop-loading-note.active {
+  display: inline-flex;
+}
+
+.shop-loading-label {
+  color: rgba(245, 241, 234, 0.72);
+}
+
+.shop-loading-note strong {
+  min-width: 1.1rem;
+  color: var(--text);
+  font-size: 1rem;
+}
+
 .product-page-hero {
   padding-bottom: 0;
 }

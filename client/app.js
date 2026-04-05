@@ -22,6 +22,8 @@ let heroTimer = null;
 let currentVisitorId = "";
 let hasTrackedPreorderClick = false;
 let visitHeartbeatTimer = null;
+let shopLoadingTimer = null;
+let shopLoadingCountdownValue = 5;
 const isProductPage = window.location.pathname.toLowerCase().endsWith("/product.html") || window.location.pathname.toLowerCase().endsWith("product.html");
 const instagramProfileUrl = "https://www.instagram.com/fewco.in?igsh=MWxnZ3F2d2trd28zNA%3D%3D&utm_source=qr";
 const productScrollKey = "fewco-product-scroll";
@@ -181,9 +183,11 @@ function getFallbackProducts() {
 }
 
 async function bootstrap() {
+  showShopLoadingCountdown();
   ensureVisitorId();
   const visitPromise = trackVisit("initial");
   await Promise.all([loadProducts(), loadSettings(), visitPromise]);
+  hideShopLoadingCountdown();
   startVisitHeartbeat();
   renderAll();
   if (isProductPage) {
@@ -199,6 +203,30 @@ async function bootstrap() {
       }, 60);
     }
   }
+}
+
+function showShopLoadingCountdown() {
+  const note = document.getElementById("shopLoadingNote");
+  const count = document.getElementById("shopLoadingCountdown");
+  if (!note || !count) return;
+
+  clearInterval(shopLoadingTimer);
+  shopLoadingCountdownValue = 5;
+  count.textContent = String(shopLoadingCountdownValue);
+  note.classList.add("active");
+
+  shopLoadingTimer = window.setInterval(() => {
+    shopLoadingCountdownValue = Math.max(1, shopLoadingCountdownValue - 1);
+    count.textContent = String(shopLoadingCountdownValue);
+  }, 1000);
+}
+
+function hideShopLoadingCountdown() {
+  const note = document.getElementById("shopLoadingNote");
+  clearInterval(shopLoadingTimer);
+  shopLoadingTimer = null;
+  if (!note) return;
+  note.classList.remove("active");
 }
 
 async function loadProducts() {
