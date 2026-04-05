@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>FewCo Supplier Editor</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <main class="section-space admin-shell">
+    <section class="section-heading admin-heading">
+      <div>
+        <p class="eyebrow">Supplier Editor</p>
+        <h2>Edit one product in detail</h2>
+        <p class="section-copy">Choose which product shows first and which image appears on the main shop page.</p>
+      </div>
+      <div class="admin-editor-links">
+        <a href="/admin.html" class="button button-secondary">Back to Admin</a>
+      </div>
+    </section>
+
+    <section class="admin-grid admin-grid-wide">
+      <article class="panel admin-panel">
+        <div class="admin-panel-head">
+          <div>
+            <p class="eyebrow">Product</p>
+            <h3 id="editorTitle">Loading product...</h3>
+          </div>
+          <p class="form-note" id="editorStatus">Editor ready.</p>
+        </div>
+        <form id="productEditorForm" class="form-panel">
+          <input type="hidden" id="productId">
+          <label>Product name<input id="name" required></label>
+          <label>Price<input id="price" type="number" required></label>
+          <label>Category
+            <select id="category">
+              <option value="men">Men</option>
+              <option value="women">Women</option>
+            </select>
+          </label>
+          <label>Audience / gender
+            <select id="gender">
+              <option value="men">Men</option>
+              <option value="women">Women</option>
+            </select>
+          </label>
+          <label>Sizes (comma separated)<input id="sizes" placeholder="XS,S,M,L,XL,XXL,3XL"></label>
+          <label>Added by<input id="addedBy" placeholder="Admin or supplier name"></label>
+          <label>Priority<input id="priority" type="number" value="0" placeholder="Higher number shows first"></label>
+          <label>Fit
+            <select id="fit">
+              <option value="Relaxed">Relaxed</option>
+              <option value="Tailored">Tailored</option>
+              <option value="Boxy">Boxy</option>
+            </select>
+          </label>
+          <label>Description<textarea id="description" rows="3"></textarea></label>
+          <label>Details<textarea id="details" rows="3"></textarea></label>
+          <label>Behind the piece<textarea id="story" rows="3"></textarea></label>
+          <label>Fabric & care<textarea id="fabricCare" rows="3"></textarea></label>
+          <label>Shipping<textarea id="shipping" rows="3"></textarea></label>
+          <label>Main image<input id="image" required placeholder="https://..."></label>
+          <label>Gallery image 2<input id="image2" placeholder="https://..."></label>
+          <label>Gallery image 3<input id="image3" placeholder="https://..."></label>
+          <label>Gallery image 4<input id="image4" placeholder="https://..."></label>
+          <label>Main page image override<input id="listingImage" placeholder="Optional: shop card image"></label>
+          <label>Current stock<input id="remaining" type="number" required value="100"></label>
+          <label class="checkbox-line"><input id="featured" type="checkbox"> Featured product</label>
+          <button type="submit" class="button button-primary">Save Product</button>
+        </form>
+      </article>
+
+      <article class="panel admin-panel supplier-preview-panel">
+        <p class="eyebrow">Preview</p>
+        <h3>Shop card image</h3>
+        <div class="supplier-preview-card">
+          <div class="supplier-preview-image" id="listingPreview"></div>
+          <div class="supplier-preview-copy">
+            <p class="form-note">This image is what customers see first on the main shop page.</p>
+            <div class="supplier-image-options" id="supplierImageOptions"></div>
+          </div>
+        </div>
+      </article>
+    </section>
+  </main>
+  <script src="admin-product.js"></script>
+</body>
+</html>

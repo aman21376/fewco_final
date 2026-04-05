@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>FewCo Admin</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <main class="section-space admin-shell">
+    <section class="section-heading admin-heading">
+      <div>
+        <p class="eyebrow">FewCo Admin</p>
+        <h2>Drop control panel</h2>
+        <p class="section-copy">Manage hero carousel visuals, product details, urgency stock, visitors, and customer leads from one place.</p>
+      </div>
+      <div class="admin-editor-links">
+        <a href="/orders.html" class="button button-secondary">Order Details</a>
+        <p class="form-note" id="adminStatus">Dashboard ready.</p>
+      </div>
+    </section>
+
+    <section class="admin-grid">
+      <article class="panel admin-panel">
+        <p class="eyebrow">Hero Carousel</p>
+        <h3>Main carousel images</h3>
+        <form id="carouselForm" class="form-panel">
+          <p class="form-note">You can also drop up to 5 images into `client/assets/carousel`. If that folder has images, the website will use those automatically.</p>
+          <p class="form-note" id="carouselFolderStatus">Local carousel folder: waiting to check.</p>
+          <label>Slide 1<input id="carousel1" placeholder="https://..."></label>
+          <label>Slide 2<input id="carousel2" placeholder="https://..."></label>
+          <label>Slide 3<input id="carousel3" placeholder="https://..."></label>
+          <label>Slide 4<input id="carousel4" placeholder="https://..."></label>
+          <label>Slide 5<input id="carousel5" placeholder="https://..."></label>
+          <button type="submit" class="button button-primary">Save Carousel</button>
+        </form>
+      </article>
+
+      <article class="panel admin-panel">
+        <p class="eyebrow">Analytics</p>
+        <h3>Live overview</h3>
+        <div class="stats-grid">
+          <div class="stat-card">
+            <span class="stat-label">Total visitors</span>
+            <strong id="totalVisitors">0</strong>
+          </div>
+          <div class="stat-card">
+            <span class="stat-label">Unique visitors</span>
+            <strong id="uniqueVisitors">0</strong>
+          </div>
+          <div class="stat-card">
+            <span class="stat-label">Avg time spent</span>
+            <strong id="customerCount">0</strong>
+          </div>
+          <div class="stat-card">
+            <span class="stat-label">Preorder clicks</span>
+            <strong id="productCount">0</strong>
+          </div>
+        </div>
+      </article>
+    </section>
+
+    <section class="admin-grid admin-grid-wide">
+      <article class="panel admin-panel">
+        <p class="eyebrow">Excel Import</p>
+        <h3>Add or update products from a sheet</h3>
+        <form id="importForm" class="form-panel">
+          <label>Excel or CSV file<input id="importFile" type="file" accept=".xlsx,.xls,.csv" required></label>
+          <p class="form-note">Supported columns: `name`, `price`, `category`, `gender`, `sizes`, `fit`, `description`, `details`, `story`, `fabricCare`, `shipping`, `image`, `image2`, `image3`, `image4`, `listingImage`, `priority`, `totalStock`, `remainingStock`, `featured`, `addedBy`.</p>
+          <button type="submit" class="button button-primary">Import Products</button>
+        </form>
+      </article>
+
+      <article class="panel admin-panel">
+        <div class="admin-panel-head">
+          <div>
+            <p class="eyebrow">Products</p>
+            <h3>Create or edit a drop piece</h3>
+            <p class="form-note">Use the `Edit` button on any product card to update it from this panel.</p>
+          </div>
+          <button class="button button-secondary" id="resetProductForm" type="button">New Product</button>
+        </div>
+
+        <form id="adminForm" class="form-panel">
+          <input type="hidden" id="productId">
+          <label>Product name<input id="name" required placeholder="Onyx Layered Tee"></label>
+          <label>Price<input id="price" type="number" required placeholder="2490"></label>
+          <label>Category
+            <select id="category">
+              <option value="men">Men</option>
+              <option value="women">Women</option>
+            </select>
+          </label>
+          <label>Audience / gender
+            <select id="gender">
+              <option value="men">Men</option>
+              <option value="women">Women</option>
+            </select>
+          </label>
+          <label>Sizes (comma separated)<input id="sizes" placeholder="XS,S,M,L,XL,XXL,3XL"></label>
+          <label>Added by<input id="addedBy" placeholder="Admin name or team member"></label>
+          <label>Priority<input id="priority" type="number" value="0" placeholder="Higher number shows first"></label>
+          <label>Fit
+            <select id="fit">
+              <option value="Relaxed">Relaxed</option>
+              <option value="Tailored">Tailored</option>
+              <option value="Boxy">Boxy</option>
+            </select>
+          </label>
+          <label>Description<textarea id="description" rows="3" placeholder="Short product summary"></textarea></label>
+          <label>Details<textarea id="details" rows="3" placeholder="Construction, trims, finish, silhouette"></textarea></label>
+          <label>Behind the piece<textarea id="story" rows="3" placeholder="Inspiration and mood"></textarea></label>
+          <label>Fabric & care<textarea id="fabricCare" rows="3" placeholder="Cold wash, care instructions"></textarea></label>
+          <label>Shipping<textarea id="shipping" rows="3" placeholder="Dispatch and delivery notes"></textarea></label>
+          <label>Main image<input id="image" required placeholder="https://..."></label>
+          <label>Gallery image 2<input id="image2" placeholder="https://..."></label>
+          <label>Gallery image 3<input id="image3" placeholder="https://..."></label>
+          <label>Gallery image 4<input id="image4" placeholder="https://..."></label>
+          <label>Main page image override<input id="listingImage" placeholder="Optional: choose a different image for shop cards"></label>
+          <label>Current stock<input id="remaining" type="number" required value="100"></label>
+          <label class="checkbox-line"><input id="featured" type="checkbox"> Featured product</label>
+          <button type="submit" class="button button-primary" id="submitProductButton">Save Product</button>
+        </form>
+      </article>
+
+      <article class="panel admin-panel">
+        <div class="admin-panel-head">
+          <div>
+            <p class="eyebrow">Current Products</p>
+            <h3>Edit existing pieces</h3>
+            <p class="form-note">Open the separate supplier editor for cleaner per-product control.</p>
+          </div>
+          <button class="button button-danger" id="deleteAllProductsButton" type="button">Delete All Listings</button>
+        </div>
+        <div id="productAdminList" class="admin-product-list"></div>
+      </article>
+    </section>
+
+    <section class="admin-grid admin-grid-wide">
+      <article class="panel admin-panel">
+        <p class="eyebrow">Recent Visitors</p>
+        <h3>Traffic snapshot</h3>
+        <div class="data-table-wrap">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Visitor ID</th>
+                <th>Total visits</th>
+                <th>Time spent</th>
+                <th>Preorder click</th>
+                <th>Enquiry</th>
+                <th>Last seen</th>
+              </tr>
+            </thead>
+            <tbody id="visitorTableBody"></tbody>
+          </table>
+        </div>
+      </article>
+
+      <article class="panel admin-panel">
+        <p class="eyebrow">Enquiry Details</p>
+        <h3>Customer and product submissions</h3>
+        <div class="data-table-wrap">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Image</th>
+                <th>Name</th>
+                <th>Phone</th>
+                <th>Product</th>
+                <th>Size / Qty</th>
+                <th>Variant</th>
+                <th>Price</th>
+                <th>Email</th>
+                <th>City / Pincode</th>
+                <th>Created</th>
+              </tr>
+            </thead>
+            <tbody id="customerTableBody"></tbody>
+          </table>
+        </div>
+      </article>
+    </section>
+  </main>
+  <script src="admin.js"></script>
+</body>
+</html>

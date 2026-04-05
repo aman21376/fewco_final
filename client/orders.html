@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>FewCo Order Details</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <main class="section-space admin-shell">
+    <section class="section-heading admin-heading">
+      <div>
+        <p class="eyebrow">Order Details</p>
+        <h2>Live enquiry dashboard</h2>
+        <p class="section-copy">Every customer submission appears here with the selected product, size, quantity, and customer details.</p>
+      </div>
+      <div class="admin-editor-links">
+        <a href="/admin.html" class="button button-secondary">Back to Admin</a>
+        <p class="form-note" id="ordersStatus">Auto-refreshing every 10 seconds.</p>
+      </div>
+    </section>
+
+    <section class="admin-grid">
+      <article class="panel admin-panel">
+        <p class="eyebrow">Live Totals</p>
+        <h3>Order interest summary</h3>
+        <div class="stats-grid">
+          <div class="stat-card">
+            <span class="stat-label">Total enquiries</span>
+            <strong id="ordersTotal">0</strong>
+          </div>
+          <div class="stat-card">
+            <span class="stat-label">Units requested</span>
+            <strong id="unitsTotal">0</strong>
+          </div>
+          <div class="stat-card">
+            <span class="stat-label">Unique customers</span>
+            <strong id="uniqueCustomers">0</strong>
+          </div>
+          <div class="stat-card">
+            <span class="stat-label">Today</span>
+            <strong id="ordersToday">0</strong>
+          </div>
+        </div>
+      </article>
+
+      <article class="panel admin-panel">
+        <p class="eyebrow">Realtime</p>
+        <h3>Saved instantly</h3>
+        <div class="order-refresh-panel">
+          <p class="product-copy">When a customer sends interest from the product page, the record is saved immediately and shown here on the next refresh.</p>
+          <p class="form-note">Last updated: <span id="lastUpdatedAt">-</span></p>
+          <button type="button" class="button button-primary" id="refreshOrdersButton">Refresh Now</button>
+        </div>
+      </article>
+    </section>
+
+    <section class="panel admin-panel orders-panel">
+      <div class="admin-panel-head">
+        <div>
+          <p class="eyebrow">Submitted Enquiries</p>
+          <h3>Customer, product, and selection details</h3>
+        </div>
+      </div>
+      <div id="ordersList" class="orders-list"></div>
+    </section>
+  </main>
+  <script src="orders.js"></script>
+</body>
+</html>

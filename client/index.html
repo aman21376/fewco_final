@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>FewCo | Owned by the Few</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="page-shell">
+    <header class="site-header" id="siteHeader">
+      <div class="countdown-strip">
+        <span>Next drop in <strong id="heroCountdown">04d 12h 18m</strong></span>
+        <span>Limited pieces only</span>
+        <span>No silent restocks</span>
+      </div>
+      <nav class="navbar">
+        <div class="nav-side nav-side-left">
+          <a href="#about" class="boxed-nav-link">About</a>
+        </div>
+        <a href="#home" class="brand-mark">FewCo</a>
+        <div class="nav-side nav-side-right">
+          <a href="#shop" class="boxed-nav-link boxed-nav-link-shop">Shop</a>
+        </div>
+      </nav>
+    </header>
+
+    <main>
+      <section class="hero-section" id="home">
+        <div class="hero-carousel" id="heroCarousel">
+          <button class="hero-arrow hero-arrow-left" id="prevHero" aria-label="Previous slide">&#10094;</button>
+          <button class="hero-arrow hero-arrow-right" id="nextHero" aria-label="Next slide">&#10095;</button>
+          <div class="hero-dots" id="heroDots"></div>
+        </div>
+        <div class="hero-content">
+          <p class="eyebrow">FewCo Drop 07</p>
+          <h1>Owned by the Few</h1>
+          <div class="hero-actions hero-actions-lead">
+            <a href="#shop" class="button button-primary">Shop Now</a>
+          </div>
+          <div class="hero-summary">
+            <p class="hero-copy">100 pieces per style. Restocks return after 90 days. Limited fashion with less waste.</p>
+          </div>
+        </div>
+      </section>
+
+      <section class="shop-section section-space" id="shop">
+        <div class="section-heading">
+          <p class="eyebrow">Shop</p>
+          <h2>The current FewCo drop.</h2>
+          <p class="section-copy">Browse the latest pieces and filter by view, size, stock, or price.</p>
+        </div>
+        <div class="shop-toolbar panel">
+          <div class="shop-toolbar-head">
+            <div class="shop-mode-toggle" id="shopModeToggle"></div>
+            <button class="filter-toggle-button" id="filterToggleButton" type="button" aria-label="Open filters" aria-expanded="false">
+              <span class="filter-icon" aria-hidden="true"></span>
+              <span class="filter-toggle-text">Filter</span>
+            </button>
+          </div>
+          <div class="toolbar-row">
+            <label>Size
+              <select id="sizeFilter">
+                <option value="all">All sizes</option>
+                <option value="XS">XS</option>
+                <option value="S">S</option>
+                <option value="M">M</option>
+                <option value="L">L</option>
+                <option value="XL">XL</option>
+                <option value="XXL">XXL</option>
+                <option value="3XL">3XL</option>
+              </select>
+            </label>
+            <label>Availability
+              <select id="availabilityFilter">
+                <option value="all">All</option>
+                <option value="low">Low stock</option>
+                <option value="in">In stock</option>
+                <option value="out">Sold out</option>
+              </select>
+            </label>
+            <label>Sort
+              <select id="sortFilter">
+                <option value="newest">Newest</option>
+                <option value="lowstock">Low stock</option>
+                <option value="priceasc">Price low to high</option>
+              </select>
+            </label>
+          </div>
+        </div>
+        <div class="product-grid shop-grid" id="shopProducts"></div>
+      </section>
+
+      <section class="product-detail-section section-space" id="product">
+        <div class="section-heading">
+          <p class="eyebrow">Product Detail</p>
+          <h2>Open any piece to view details.</h2>
+        </div>
+        <div class="product-detail panel" id="productDetail"></div>
+      </section>
+
+      <section class="about-section section-space" id="about">
+        <div class="section-heading">
+          <p class="eyebrow">About FewCo</p>
+          <h2>Limited fashion made with more care and less waste.</h2>
+        </div>
+        <article class="panel about-compact about-story">
+          <p class="about-lead">FewCo is built for people who do not want to wear what everyone else already owns. We make calm, premium pieces in small numbers so each release feels personal, not mass-made.</p>
+          <p>Every style is released in a batch of only 100 pieces per quarter. If a piece sells out, it does not quietly come back the next week. It returns only after 90 days, which keeps the brand honest and each drop worth waiting for.</p>
+          <div class="about-points">
+            <div class="about-point">
+              <span class="about-point-value">100</span>
+              <span class="about-point-label">pieces per style</span>
+            </div>
+            <div class="about-point">
+              <span class="about-point-value">90</span>
+              <span class="about-point-label">days before return</span>
+            </div>
+            <div class="about-point">
+              <span class="about-point-value">Less</span>
+              <span class="about-point-label">waste, more intention</span>
+            </div>
+          </div>
+          <p>By producing less, FewCo avoids excess stock and unnecessary waste. The result is simple: better pieces, clearer value, and a slower way of making fashion that respects both the product and nature.</p>
+        </article>
+      </section>
+    </main>
+
+    <footer class="site-footer">
+      <div class="footer-grid simple-footer">
+        <div>
+          <h4>Shop</h4>
+          <a href="#shop">Current Drop</a>
+          <a href="#product">Product Detail</a>
+        </div>
+        <div>
+          <h4>About</h4>
+          <a href="#about">Brand Story</a>
+        </div>
+        <div>
+          <h4>Contact</h4>
+          <a href="mailto:hello@fewco.co">Email</a>
+          <a href="#!">Instagram</a>
+        </div>
+      </div>
+      <div class="footer-bottom footer-bottom-row">
+        <span>FewCo — Owned by the Few</span>
+        <a href="mailto:hello@fewco.co?subject=FewCo%20Enquiry" class="button button-secondary footer-enquiry-button">Enquiry</a>
+      </div>
+    </footer>
+  </div>
+  <script src="app.js"></script>
+</body>
+</html>
