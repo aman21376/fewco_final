@@ -244,6 +244,7 @@ button {
 .hero-carousel {
   position: relative;
   min-height: 72vh;
+  aspect-ratio: 16 / 10;
   border-radius: 28px;
   overflow: hidden;
   background: var(--surface);
@@ -459,6 +460,18 @@ h3 {
   margin-bottom: 2rem;
 }
 
+.product-page-hero {
+  padding-bottom: 0;
+}
+
+.product-page-hero .section-heading {
+  margin-bottom: 1rem;
+}
+
+.product-detail-section {
+  padding-top: 1.2rem;
+}
+
 .section-row {
   justify-content: space-between;
   align-items: end;
@@ -573,11 +586,13 @@ h3 {
   display: flex;
   flex-direction: column;
   cursor: pointer;
+  height: 100%;
 }
 
 .product-image {
   position: relative;
   min-height: 360px;
+  aspect-ratio: 4 / 5;
   overflow: hidden;
 }
 
@@ -631,6 +646,10 @@ h3 {
 
 .product-body {
   padding: 1.3rem;
+  display: grid;
+  gap: 0.85rem;
+  align-content: start;
+  flex: 1;
 }
 
 .product-card:focus-visible {
@@ -718,7 +737,41 @@ h3 {
 }
 
 .card-actions {
-  margin-top: 1.1rem;
+  margin-top: auto;
+}
+
+.interest-submit-button,
+.card-cta-button {
+  width: 100%;
+  min-height: 48px;
+  justify-content: center;
+  border-radius: 14px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  font-size: 0.78rem;
+}
+
+.interest-submit-button {
+  min-height: 56px;
+  box-shadow: 0 16px 34px rgba(216, 203, 184, 0.12);
+}
+
+.interest-cta-copy {
+  margin-top: -0.2rem;
+  padding: 0.85rem 1rem;
+  border-radius: 14px;
+  border: 1px solid rgba(216, 203, 184, 0.12);
+  background: rgba(255, 255, 255, 0.025);
+}
+
+.product-card h3 {
+  margin: 0;
+  line-height: 0.95;
+  min-height: 2.1em;
+  font-size: clamp(2rem, 2.7vw, 3rem);
+  word-break: normal;
+  overflow-wrap: break-word;
+  text-wrap: balance;
 }
 
 .text-button {
@@ -808,6 +861,25 @@ button:disabled {
 .interest-form {
   display: grid;
   gap: 1rem;
+}
+
+.thankyou-panel {
+  display: grid;
+  gap: 1rem;
+  padding: 2rem;
+  min-height: 420px;
+  align-content: center;
+}
+
+.thankyou-panel h2 {
+  margin-bottom: 0;
+}
+
+.thankyou-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.9rem;
+  margin-top: 0.5rem;
 }
 
 label {
@@ -1016,6 +1088,7 @@ textarea:focus {
 
 .detail-main-image {
   min-height: 680px;
+  aspect-ratio: 4 / 5;
 }
 
 .detail-main-image::after {
@@ -1320,8 +1393,9 @@ textarea:focus {
 }
 
 .footer-bottom-row {
-  display: flex;
-  align-items: center;
+  display: grid;
+  grid-template-columns: auto 1fr;
+  align-items: start;
   justify-content: space-between;
   gap: 1rem;
 }
@@ -1333,6 +1407,47 @@ textarea:focus {
   border-radius: 12px;
   font-size: 0.76rem;
   letter-spacing: 0.12em;
+}
+
+.footer-feedback-form {
+  display: grid;
+  gap: 0.85rem;
+}
+
+.footer-feedback-types {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.footer-feedback-pill {
+  min-height: 38px;
+  padding: 0 0.95rem;
+  border-radius: 999px;
+  border: 1px solid var(--line);
+  background: transparent;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  font-size: 0.68rem;
+}
+
+.footer-feedback-pill.active {
+  background: var(--beige);
+  border-color: var(--beige);
+  color: var(--bg);
+}
+
+.footer-feedback-fields {
+  display: grid;
+  grid-template-columns: 0.9fr 1fr 1.2fr auto;
+  gap: 0.75rem;
+  align-items: start;
+}
+
+.footer-feedback-fields textarea {
+  min-height: 48px;
+  resize: vertical;
 }
 
 .empty-state {
@@ -1406,6 +1521,13 @@ textarea:focus {
 .stat-card strong {
   font-family: "Cormorant Garamond", serif;
   font-size: 2.1rem;
+}
+
+.stat-copy {
+  margin: 0.55rem 0 0;
+  color: var(--muted);
+  font-size: 0.78rem;
+  line-height: 1.5;
 }
 
 .checkbox-line {
@@ -1659,6 +1781,33 @@ textarea:focus {
     letter-spacing: 0.1em;
   }
 
+  .product-body {
+    gap: 0.7rem;
+    padding: 1rem;
+  }
+
+  .product-card h3 {
+    min-height: auto;
+    font-size: clamp(1.5rem, 8vw, 2.4rem);
+    line-height: 0.98;
+  }
+
+  .price {
+    font-size: 1rem;
+  }
+
+  .product-page-hero {
+    padding-top: 2.3rem;
+  }
+
+  .product-page-hero .section-heading {
+    margin-bottom: 0.65rem;
+  }
+
+  .product-detail-section {
+    padding-top: 0.5rem;
+  }
+
   .section-space,
   .site-footer {
     padding-left: 1.25rem;
@@ -1690,6 +1839,7 @@ textarea:focus {
 
   .detail-main-image {
     min-height: 420px;
+    aspect-ratio: 4 / 5;
   }
 
   .cart-item {
@@ -1724,6 +1874,23 @@ textarea:focus {
 
   .order-grid {
     grid-template-columns: 1fr;
+  }
+
+  .footer-bottom-row {
+    grid-template-columns: 1fr;
+  }
+
+  .footer-feedback-fields {
+    grid-template-columns: 1fr;
+  }
+
+  .hero-carousel {
+    min-height: auto;
+    aspect-ratio: 4 / 5;
+  }
+
+  .product-image {
+    min-height: auto;
   }
 }
 

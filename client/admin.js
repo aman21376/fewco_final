@@ -129,17 +129,21 @@ function renderAnalytics(data) {
   document.getElementById("uniqueVisitors").textContent = data.totals?.uniqueVisitors || 0;
   document.getElementById("customerCount").textContent = formatDuration(data.totals?.averageDurationMs || 0);
   document.getElementById("productCount").textContent = data.totals?.preorderClicks || 0;
+  document.getElementById("repeatVisitors").textContent = data.totals?.repeatVisitors || 0;
+  document.getElementById("preorderRate").textContent = `${data.totals?.preorderConversionRate || 0}%`;
 
   document.getElementById("visitorTableBody").innerHTML = (data.recentVisitors || []).map(visitor => `
     <tr>
       <td>${visitor.visitorId}</td>
+      <td>${visitor.lead ? `${visitor.lead.name || "-"}<br>${visitor.lead.phone || visitor.lead.email || "-"}` : "-"}</td>
       <td>${visitor.visitCount}</td>
       <td>${formatDuration(visitor.durationMs || 0)}</td>
+      <td>${visitor.lead?.productName ? `${visitor.lead.productName}<br>${visitor.lead.selectedSize || "-"} / ${visitor.lead.selectedQuantity || 1}` : "-"}</td>
       <td>${visitor.preOrderClicked ? "Yes" : "No"}</td>
       <td>${visitor.enquirySent ? "Yes" : "No"}</td>
       <td>${formatDate(visitor.lastSeenAt)}</td>
     </tr>
-  `).join("") || `<tr><td colspan="6">No visitor data yet.</td></tr>`;
+  `).join("") || `<tr><td colspan="8">No visitor data yet.</td></tr>`;
 
   document.getElementById("customerTableBody").innerHTML = (data.customers || []).map(customer => `
     <tr>

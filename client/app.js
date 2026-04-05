@@ -22,6 +22,7 @@ let heroTimer = null;
 let currentVisitorId = "";
 let hasTrackedPreorderClick = false;
 const isProductPage = window.location.pathname.toLowerCase().endsWith("/product.html") || window.location.pathname.toLowerCase().endsWith("product.html");
+const instagramProfileUrl = "https://www.instagram.com/fewco.in?igsh=MWxnZ3F2d2trd28zNA%3D%3D&utm_source=qr";
 let detailFormState = {
   name: "",
   phone: "",
@@ -29,6 +30,7 @@ let detailFormState = {
   city: "",
   pincode: ""
 };
+let detailSuccessState = null;
 
 function captureDetailFormState() {
   const form = document.getElementById("productInterestForm");
@@ -274,14 +276,8 @@ function renderProductCards(containerId, products) {
         </div>
         <h3>${product.name}</h3>
         <p class="price">₹${product.price.toLocaleString("en-IN")}</p>
-        <p class="product-copy">${product.description}</p>
-        <div class="stock-line ${product.lowStock ? "low" : ""}">
-          <span>${product.remainingStock} / 100 remaining</span>
-          <span>${product.lowStock ? "Low Stock" : product.dropLabel}</span>
-        </div>
-        <div class="stock-bar ${product.lowStock ? "low" : ""}"><span style="width:${product.remainingRatio}%"></span></div>
         <div class="card-actions">
-          <button class="text-button" data-view-product="${product.id}">Shop now</button>
+          <button class="button button-secondary card-cta-button" data-view-product="${product.id}">Pre Order Now</button>
         </div>
       </div>
     </article>
@@ -427,6 +423,22 @@ function renderProductDetail() {
     return;
   }
 
+  if (detailSuccessState?.productId === product.id) {
+    container.innerHTML = `
+      <div class="thankyou-panel">
+        <p class="eyebrow">Interest Saved</p>
+        <h2>Thanks for showing interest.</h2>
+        <p class="product-copy">Your preorder interest for <strong>${product.name}</strong> has been saved with size ${detailSuccessState.selectedSize} and quantity ${detailSuccessState.selectedQuantity}.</p>
+        <p class="product-copy">We will reach out with the next update on this piece.</p>
+        <div class="thankyou-actions">
+          <a class="button button-primary" href="/#shop">Back to Shopping</a>
+          <button class="button button-secondary" type="button" id="followInstagramButton">Follow Us on Instagram</button>
+        </div>
+      </div>
+    `;
+    return;
+  }
+
   const image = product.images[selectedImageIndex] || product.images[0];
   const tabs = getProductTabContent(product);
 
@@ -476,8 +488,9 @@ function renderProductDetail() {
         <label>City<input type="text" name="city" placeholder="Your city" value="${detailFormState.city}"></label>
         <label>Pincode<input type="text" name="pincode" placeholder="400001" value="${detailFormState.pincode}"></label>
         <div class="detail-actions">
-          <button class="button button-primary" type="submit">Send Interest</button>
+          <button class="button button-primary interest-submit-button" type="submit">Pre Order Now</button>
         </div>
+        <p class="form-note interest-cta-copy">This is a preorder interest request. Once you submit it, our team will call you back with the next steps.</p>
         <p class="form-note policy-note">Exchange only. Size exchanges depend on stock availability because this is a limited-edition collection.</p>
         <p class="form-note">Your interest will be saved with the selected size and quantity. No payment is collected now.</p>
       </form>
@@ -545,7 +558,36 @@ function openProduct(productId) {
   selectedQuantity = 1;
   selectedTab = "details";
   detailFormState = { name: "", phone: "", email: "", city: "", pincode: "" };
+  detailSuccessState = null;
   window.location.href = `/product.html?product=${productId}`;
+}
+
+function openInstagramProfile() {
+  const appUrl = "instagram://user?username=fewco.in";
+  const openedAt = Date.now();
+  window.location.href = appUrl;
+  window.setTimeout(() => {
+    if (Date.now() - openedAt < 1800) {
+      window.open(instagramProfileUrl, "_blank", "noopener,noreferrer");
+    }
+  }, 900);
+}
+
+function getFooterFeedbackPayload(form) {
+  const formData = new FormData(form);
+  const contact = String(formData.get("contact") || "").trim();
+  const feedbackType = String(formData.get("feedbackType") || "enquiry").trim();
+  const isEmail = contact.includes("@");
+
+  return {
+    name: String(formData.get("name") || "").trim(),
+    phone: isEmail ? "" : contact,
+    email: isEmail ? contact : "",
+    source: "footer-feedback",
+    selectedVariant: feedbackType,
+    notes: String(formData.get("message") || "").trim(),
+    visitorId: currentVisitorId
+  };
 }
 
 async function likeCurrentHeroIdea() {
@@ -621,6 +663,20 @@ function bindEvents() {
       setHeroSlide(heroIndex + 1);
       startHeroTimer();
     }
+    if (event.target.id === "followInstagramButton") {
+      openInstagramProfile();
+    }
+    if (event.target.closest("[data-feedback-type]")) {
+      const selectedType = event.target.closest("[data-feedback-type]").dataset.feedbackType;
+      const form = event.target.closest("#footerFeedbackForm");
+      if (form) {
+        form.querySelectorAll("[data-feedback-type]").forEach(button => {
+          button.classList.toggle("active", button.dataset.feedbackType === selectedType);
+        });
+        const hiddenInput = form.querySelector("#footerFeedbackType");
+        if (hiddenInput) hiddenInput.value = selectedType;
+      }
+    }
     if (event.target.closest("#filterToggleButton")) {
       const toolbar = document.querySelector(".shop-toolbar");
       const button = document.getElementById("filterToggleButton");
@@ -641,45 +697,73 @@ function bindEvents() {
   });
 
   document.addEventListener("submit", async event => {
-    if (event.target.id !== "productInterestForm") return;
-    event.preventDefault();
-    const product = allProducts.find(item => item.id === selectedProductId);
-    if (!product) return;
+    if (event.target.id === "productInterestForm") {
+      event.preventDefault();
+      const product = allProducts.find(item => item.id === selectedProductId);
+      if (!product) return;
 
-    const formData = new FormData(event.target);
-    const payload = {
-      visitorId: currentVisitorId,
-      productId: product.id,
-      name: formData.get("name"),
-      phone: formData.get("phone"),
-      email: formData.get("email"),
-      city: formData.get("city"),
-      pincode: formData.get("pincode"),
-      source: "product-interest",
-      productName: product.name,
-      productImage: product.image,
-      productPrice: product.price,
-      selectedSize,
-      selectedQuantity,
-      selectedVariant: `${capitalize(product.gender)} / ${capitalize(product.category)}`,
-      notes: `Interest for ${product.name} | size ${selectedSize} | quantity ${selectedQuantity}`
-    };
+      const formData = new FormData(event.target);
+      const payload = {
+        visitorId: currentVisitorId,
+        productId: product.id,
+        name: formData.get("name"),
+        phone: formData.get("phone"),
+        email: formData.get("email"),
+        city: formData.get("city"),
+        pincode: formData.get("pincode"),
+        source: "product-interest",
+        productName: product.name,
+        productImage: product.image,
+        productPrice: product.price,
+        selectedSize,
+        selectedQuantity,
+        selectedVariant: `${capitalize(product.gender)} / ${capitalize(product.category)}`,
+        notes: `Interest for ${product.name} | size ${selectedSize} | quantity ${selectedQuantity}`
+      };
 
-    try {
-      const response = await fetch(`${ADMIN_API_URL}/customers`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload)
-      });
-      const data = await response.json();
-      if (!response.ok) throw new Error(data.message || "Unable to save enquiry");
-      await loadProducts();
-      renderAll();
-      event.target.reset();
-      detailFormState = { name: "", phone: "", email: "", city: "", pincode: "" };
-      alert("Your product interest has been saved and stock has been updated.");
-    } catch (error) {
-      alert(error.message || "Unable to save your product interest right now.");
+      try {
+        const response = await fetch(`${ADMIN_API_URL}/customers`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload)
+        });
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.message || "Unable to save enquiry");
+        await loadProducts();
+        detailSuccessState = {
+          productId: product.id,
+          selectedSize,
+          selectedQuantity
+        };
+        detailFormState = { name: "", phone: "", email: "", city: "", pincode: "" };
+        renderAll();
+      } catch (error) {
+        alert(error.message || "Unable to save your product interest right now.");
+      }
+      return;
+    }
+
+    if (event.target.id === "footerFeedbackForm") {
+      event.preventDefault();
+      const payload = getFooterFeedbackPayload(event.target);
+      try {
+        const response = await fetch(`${ADMIN_API_URL}/customers`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload)
+        });
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.message || "Unable to save feedback");
+        event.target.reset();
+        const typeInput = event.target.querySelector("#footerFeedbackType");
+        if (typeInput) typeInput.value = "enquiry";
+        event.target.querySelectorAll("[data-feedback-type]").forEach(button => {
+          button.classList.toggle("active", button.dataset.feedbackType === "enquiry");
+        });
+        alert("Thanks for sharing your feedback.");
+      } catch (error) {
+        alert(error.message || "Unable to save feedback right now.");
+      }
     }
   });
 

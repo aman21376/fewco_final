@@ -148,7 +148,20 @@
       </div>
       <div class="footer-bottom footer-bottom-row">
         <span>FewCo — Owned by the Few</span>
-        <a href="mailto:hello@fewco.co?subject=FewCo%20Enquiry" class="button button-secondary footer-enquiry-button">Enquiry</a>
+        <form class="footer-feedback-form" id="footerFeedbackForm">
+          <div class="footer-feedback-types">
+            <button class="footer-feedback-pill active" type="button" data-feedback-type="enquiry">Enquiry</button>
+            <button class="footer-feedback-pill" type="button" data-feedback-type="liked">Liked</button>
+            <button class="footer-feedback-pill" type="button" data-feedback-type="did-not-like">Did Not Like</button>
+          </div>
+          <div class="footer-feedback-fields">
+            <input type="hidden" name="feedbackType" id="footerFeedbackType" value="enquiry">
+            <input type="text" name="name" placeholder="Name" required>
+            <input type="text" name="contact" placeholder="Phone number or email" required>
+            <textarea name="message" rows="2" placeholder="Tell us in a few words"></textarea>
+            <button type="submit" class="button button-secondary footer-enquiry-button">Submit</button>
+          </div>
+        </form>
       </div>
     </footer>
   </div>

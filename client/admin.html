@@ -46,18 +46,32 @@
           <div class="stat-card">
             <span class="stat-label">Total visitors</span>
             <strong id="totalVisitors">0</strong>
+            <p class="stat-copy">All tracked visits across the site.</p>
           </div>
           <div class="stat-card">
             <span class="stat-label">Unique visitors</span>
             <strong id="uniqueVisitors">0</strong>
+            <p class="stat-copy">Different visitors by browser session.</p>
           </div>
           <div class="stat-card">
             <span class="stat-label">Avg time spent</span>
             <strong id="customerCount">0</strong>
+            <p class="stat-copy">Average visit duration before last seen.</p>
           </div>
           <div class="stat-card">
             <span class="stat-label">Preorder clicks</span>
             <strong id="productCount">0</strong>
+            <p class="stat-copy">Visitors who clicked into preorder interest.</p>
+          </div>
+          <div class="stat-card">
+            <span class="stat-label">Repeat visitors</span>
+            <strong id="repeatVisitors">0</strong>
+            <p class="stat-copy">Visitors who returned more than once.</p>
+          </div>
+          <div class="stat-card">
+            <span class="stat-label">Preorder rate</span>
+            <strong id="preorderRate">0%</strong>
+            <p class="stat-copy">Preorder clicks compared to unique visitors.</p>
           </div>
         </div>
       </article>
@@ -148,8 +162,10 @@
             <thead>
               <tr>
                 <th>Visitor ID</th>
+                <th>User details</th>
                 <th>Total visits</th>
                 <th>Time spent</th>
+                <th>Interested in</th>
                 <th>Preorder click</th>
                 <th>Enquiry</th>
                 <th>Last seen</th>

@@ -184,7 +184,7 @@ router.post("/preorder-click", async (req, res) => {
 
 router.get("/analytics", async (req, res) => {
   try {
-    const [visitorRows, uniqueVisitors, customerRows, customerCount, products, carouselLikes, enquiryVisitors, enquiryCount, preorderClickCount] = await Promise.all([
+    const [visitorRows, uniqueVisitors, customerRows, customerCount, products, carouselLikes, enquiryVisitors, enquiryCount, preorderClickCount, repeatVisitors] = await Promise.all([
       Visitor.find().sort({ lastSeenAt: -1 }).limit(8),
       Visitor.countDocuments(),
       Customer.find().sort({ createdAt: -1 }).limit(20),
@@ -196,7 +196,8 @@ router.get("/analytics", async (req, res) => {
       ]),
       Customer.distinct("visitorId", { source: "product-interest", visitorId: { $ne: "" } }),
       Customer.countDocuments({ source: "product-interest" }),
-      Visitor.countDocuments({ preOrderClicked: true })
+      Visitor.countDocuments({ preOrderClicked: true }),
+      Visitor.countDocuments({ visitCount: { $gt: 1 } })
     ]);
 
     const totalVisitors = visitorRows.reduce((sum, row) => sum + row.visitCount, 0);
@@ -223,12 +224,33 @@ router.get("/analytics", async (req, res) => {
     ]);
 
     const enquiryVisitorSet = new Set(enquiryVisitors);
+    const latestCustomerByVisitor = new Map();
+    customerRows.forEach(customer => {
+      if (customer.visitorId && !latestCustomerByVisitor.has(customer.visitorId)) {
+        latestCustomerByVisitor.set(customer.visitorId, customer);
+      }
+    });
+
     const recentVisitors = visitorRows.map(visitor => ({
       ...visitor.toObject(),
       durationMs: Math.max(0, new Date(visitor.lastSeenAt).getTime() - new Date(visitor.firstSeenAt).getTime()),
       enquirySent: enquiryVisitorSet.has(visitor.visitorId),
-      preOrderClicked: Boolean(visitor.preOrderClicked)
+      preOrderClicked: Boolean(visitor.preOrderClicked),
+      lead: latestCustomerByVisitor.has(visitor.visitorId)
+        ? {
+            name: latestCustomerByVisitor.get(visitor.visitorId).name || "",
+            phone: latestCustomerByVisitor.get(visitor.visitorId).phone || "",
+            email: latestCustomerByVisitor.get(visitor.visitorId).email || "",
+            productName: latestCustomerByVisitor.get(visitor.visitorId).productName || "",
+            selectedSize: latestCustomerByVisitor.get(visitor.visitorId).selectedSize || "",
+            selectedQuantity: latestCustomerByVisitor.get(visitor.visitorId).selectedQuantity || 1
+          }
+        : null
     }));
+
+    const preorderConversionRate = uniqueVisitors
+      ? Math.round((preorderClickCount / uniqueVisitors) * 100)
+      : 0;
 
     res.json({
       totals: {
@@ -236,9 +258,11 @@ router.get("/analytics", async (req, res) => {
         uniqueVisitors,
         averageDurationMs: Math.round(allVisitorDurations[0]?.averageDurationMs || 0),
         preorderClicks: preorderClickCount,
+        repeatVisitors,
         enquiryCount,
         customerCount,
-        productCount: products
+        productCount: products,
+        preorderConversionRate
       },
       recentVisitors,
       customers: customerRows,
@@ -352,9 +376,9 @@ router.get("/orders", async (req, res) => {
 
 router.post("/customers", async (req, res) => {
   try {
-    const { name, phone } = req.body;
-    if (!name || !phone) {
-      return res.status(400).json({ message: "Name and phone are required" });
+    const { name, phone, email } = req.body;
+    if (!name || (!phone && !email)) {
+      return res.status(400).json({ message: "Name and phone or email are required" });
     }
 
     const source = req.body.source || "waitlist";
@@ -380,9 +404,17 @@ router.post("/customers", async (req, res) => {
         productPrice: Number(req.body.productPrice || product.price || 0),
         selectedQuantity: quantity
       });
+    } else if (source === "footer-feedback") {
+      customer = await Customer.create({
+        ...req.body,
+        source,
+        phone: req.body.phone || "",
+        email: req.body.email || "",
+        notes: req.body.notes || ""
+      });
     } else {
       customer = await Customer.findOneAndUpdate(
-        { phone },
+        { phone: phone || `email:${email}` },
         { ...req.body, source },
         { upsert: true, new: true, setDefaultsOnInsert: true }
       );
